@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 8/05/2023 - work on implementing rules, made the cell array 3d (for previous state and new state)
+ * @version 15/05/2023 - update function updates array with rules, need to work on timer and printing new array
  */
 import java.util.Scanner;
 public class GameOfLife
@@ -73,13 +73,17 @@ public class GameOfLife
     void advance(int turns) {
         for(int i=0; i < BOARDSIZE; i++) {
             for(int j=0; j < BOARDSIZE; j++) {
-                // IMPLEMENT RULES HERE USING countAdjacent(j,i)
+                if(cells[j][i][0]) {
+                    if(!(countAdjacent(j,i)==2 || countAdjacent(j,i)==3)) cells[j][i][1] = false;
+                } else {
+                    if(countAdjacent(j,i)==3) cells[j][i][1] = true;
+                }
             }
         }
         menu();
     }
     
-    int countAdjacent(int x, int y) {
+    int countAdjacent(int x, int y) { // counts how many cells are alive surrounding the cell given to it
         int surroundingNum = 0;
         if(y>0) {
             if(x>0) if(cells[x-1][y-1][0]) surroundingNum++;

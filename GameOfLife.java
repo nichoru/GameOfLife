@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 18/05/2023 - Reads title screen file
+ * @version 22/05/2023 - Screen reset animation, trying to make board size adjustable
  */
 import java.util.Scanner;
 import java.io.File;
@@ -11,9 +11,10 @@ import java.io.IOException;
 public class GameOfLife
 {
     Scanner kb = new Scanner(System.in);
-    int boardSize = 40;
+    int boardSize = 30;
     final char ALIVE = 'o';
     final char DEAD = '_';
+    final int RESETSPEED = 150;
     boolean[][][] cells = new boolean[boardSize][boardSize][2];
     String[] toggleString = new String[2];
     boolean isStart = false;
@@ -21,8 +22,7 @@ public class GameOfLife
     int speed = 2000;
     public GameOfLife() 
     {
-        reset();
-        menu();
+        title();
     }
 
     void readFile(String fileName) {
@@ -30,6 +30,7 @@ public class GameOfLife
         try {
             Scanner fileReader = new Scanner(myFile);
             boardSize = fileReader.nextInt();
+            boolean[][][] cells = new boolean[boardSize][boardSize][2];
             String[] fileLine = new String[boardSize];
             fileLine = fileReader.nextLine().split(" ");
             for(int i=0; i < boardSize; i++) {
@@ -45,20 +46,38 @@ public class GameOfLife
     }
 
     void reset() { // sets all cells to false (dead) then updates the screen
-        readFile("TitleScreen.txt");
-        /*for(int i=0; i < boardSize; i++) {
-            for(int j=0; j < boardSize; j++) {
-                cells[j][i][0] = false;
-                cells[j][i][1] = false;
-            }
-        }*/
+        for(int i=0; i < boardSize; i++) cells[i][0][1] = true;
         update();
+        for(int i=0; i < boardSize-1; i++) {
+            try {
+                Thread.sleep(RESETSPEED);
+            } catch(Exception e) {
+                System.out.println("Looks like something went wrong");
+            }
+            for(int j=0; j < boardSize; j++) cells[j][i+1][1] = true;
+            update();
+            try {
+                Thread.sleep(RESETSPEED);
+            } catch(Exception e) {
+                System.out.println("Looks like something went wrong");
+            }
+            for(int j=0; j < boardSize; j++) cells[j][i][1] = false;
+            update();
+        }
+        try {
+            Thread.sleep(100);
+        } catch(Exception e) {
+            System.out.println("Looks like something went wrong");
+        }
+        for(int i=0; i < boardSize; i++) cells[i][boardSize-1][1] = false;
+        update();
+        menu();
     }
 
     void menu() { // tells you the commands and lets you input them
         isStart = false;
         while(!isStart) {
-            System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board, a to change advancement speed (currently "+speed+" milliseconds per turn)");
+            System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
             isCommand = false;
             while(!isCommand) {
                 isCommand = true;
@@ -67,9 +86,11 @@ public class GameOfLife
                     break;
                     case "s": isStart = true;
                     break;
-                    case "q": advance(1);
+                    case "q": advance(1,false);
                     break;
                     case "a": speed();
+                    break;
+                    case "b": size();
                     break;
                     case "r": reset();
                     break;
@@ -79,7 +100,15 @@ public class GameOfLife
         }
         update();
         System.out.println("How many turns do you want to advance?");
-        advance(kb.nextInt());
+        advance(kb.nextInt(),true);
+    }
+    
+    void title() {
+        readFile("TitleScreen.txt");
+        update();
+        System.out.println("Press any key to start");
+        kb.nextLine();
+        reset();
     }
 
     void toggle() { // toggles player-selected cells between alive and dead then updates the screen
@@ -104,9 +133,17 @@ public class GameOfLife
         speed = kb.nextInt();
         update();
     }
+    
+    void size() {
+        System.out.println("How wide/tall do you want the board to be?");
+        boardSize = kb.nextInt();
+        boolean[][][] cells = new boolean[boardSize][boardSize][2];
+        update();
+    }
 
     void update() { // clears the screen and prints the board
-        for(int i=0; i < boardSize; i++) {
+        System.out.println(boardSize);
+        /*for(int i=0; i < boardSize; i++) {
             for(int j=0; j < boardSize; j++) {
                 cells[j][i][0]=cells[j][i][1];
             }
@@ -118,10 +155,10 @@ public class GameOfLife
                 else System.out.print(DEAD + " ");
             }
             System.out.println();
-        }
+        }*/
     }
 
-    void advance(int turns) {
+    void advance(int turns, boolean isWait) {
         for(int k=0; k < turns; k++) {
             for(int i=0; i < boardSize; i++) {
                 for(int j=0; j < boardSize; j++) {
@@ -132,10 +169,12 @@ public class GameOfLife
                     }
                 }
             }
-            try {
-                Thread.sleep(speed);
-            } catch(Exception e) {
-                System.out.println("Looks like something went wrong");
+            if(isWait) {
+                try {
+                    Thread.sleep(speed);
+                } catch(Exception e) {
+                    System.out.println("Looks like something went wrong");
+                }
             }
             update();
         }

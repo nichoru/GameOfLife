@@ -3,41 +3,78 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 22/05/2023 - Screen reset animation, trying to make board size adjustable
+ * @version 23/05/2023 - Board size is adjustable, save files and quit function implemented with animated reset
  */
 import java.util.Scanner;
 import java.io.File;
 import java.io.IOException;
+import java.io.FileWriter;
 public class GameOfLife
 {
     Scanner kb = new Scanner(System.in);
     int boardSize = 30;
-    final char ALIVE = 'o';
-    final char DEAD = '_';
-    final int RESETSPEED = 150;
+    final String ALIVE = "o";
+    final String DEAD = "_";
+    final int RESETSPEED = 25;
     boolean[][][] cells = new boolean[boardSize][boardSize][2];
     String[] toggleString = new String[2];
     boolean isStart = false;
     boolean isCommand;
-    int speed = 2000;
+    int speed = 500;
     public GameOfLife() 
     {
-        title();
+        title(true);
     }
 
-    void readFile(String fileName) {
+    void readFile(String fileName, boolean isAnimated) {
         File myFile = new File(fileName);
         try {
             Scanner fileReader = new Scanner(myFile);
             boardSize = fileReader.nextInt();
-            boolean[][][] cells = new boolean[boardSize][boardSize][2];
+            boolean[][][] tempBoard = new boolean[boardSize][boardSize][2];
+            cells = tempBoard;
             String[] fileLine = new String[boardSize];
             fileLine = fileReader.nextLine().split(" ");
-            for(int i=0; i < boardSize; i++) {
+            if(isAnimated) {
+                for(int i=0; i < boardSize; i++) cells[i][0][1] = true;
+                update();
+                for(int i=0; i < boardSize-1; i++) {
+                    try {
+                        Thread.sleep(RESETSPEED);
+                    } catch(Exception e) {
+                        System.out.println("Looks like something went wrong");
+                    }
+                    for(int j=0; j < boardSize; j++) cells[j][i+1][1] = true;
+                    update();
+                    try {
+                        Thread.sleep(RESETSPEED);
+                    } catch(Exception e) {
+                        System.out.println("Looks like something went wrong");
+                    }
+                    fileLine = fileReader.nextLine().split(" ");
+                    for(int j=0; j < boardSize; j++) {
+                        if(fileLine[j].equals(ALIVE)) cells[j][i][1] = true;
+                        else cells[j][i][1] = false;
+                    }
+                    update();
+                }
+                try {
+                    Thread.sleep(100);
+                } catch(Exception e) {
+                    System.out.println("Looks like something went wrong");
+                }
                 fileLine = fileReader.nextLine().split(" ");
-                for(int j=0; j < boardSize; j++) {
-                    if(fileLine[j].equals("o")) cells[j][i][1] = true;
-                    else cells[j][i][1] = false;
+                for(int i=0; i < boardSize; i++) {
+                    if(fileLine[i].equals(ALIVE)) cells[i][boardSize-1][1] = true;
+                    else cells[i][boardSize-1][1] = false;
+                }
+            } else {
+                for(int i=0; i < boardSize; i++) {
+                    fileLine = fileReader.nextLine().split(" ");
+                    for(int j=0; j < boardSize; j++) {
+                        if(fileLine[j].equals(ALIVE)) cells[j][i][1] = true;
+                        else cells[j][i][1] = false;
+                    }
                 }
             }
         } catch(IOException e) {
@@ -77,22 +114,28 @@ public class GameOfLife
     void menu() { // tells you the commands and lets you input them
         isStart = false;
         while(!isStart) {
-            System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
+            System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board, x to quit\nPress l to load the most recent state saved, c to save the current state\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
             isCommand = false;
             while(!isCommand) {
                 isCommand = true;
                 switch(kb.nextLine().toLowerCase()) {
-                    case "t": toggle();
-                    break;
-                    case "s": isStart = true;
-                    break;
-                    case "q": advance(1,false);
-                    break;
                     case "a": speed();
                     break;
                     case "b": size();
                     break;
+                    case "c": save();
+                    break;
+                    case "l": load();
+                    break;
+                    case "q": advance(1,false);
+                    break;
                     case "r": reset();
+                    break;
+                    case "s": isStart = true;
+                    break;
+                    case "t": toggle();
+                    break;
+                    case "x": title(false);
                     break;
                     default: isCommand = false;
                 }
@@ -102,11 +145,12 @@ public class GameOfLife
         System.out.println("How many turns do you want to advance?");
         advance(kb.nextInt(),true);
     }
-    
-    void title() {
-        readFile("TitleScreen.txt");
+
+    void title(boolean isStart) {
+        if(isStart) readFile("TitleScreen.txt", false);
+        else readFile("TitleScreen.txt", true);
         update();
-        System.out.println("Press any key to start");
+        System.out.println("Press enter to start");
         kb.nextLine();
         reset();
     }
@@ -133,17 +177,48 @@ public class GameOfLife
         speed = kb.nextInt();
         update();
     }
-    
+
     void size() {
         System.out.println("How wide/tall do you want the board to be?");
         boardSize = kb.nextInt();
-        boolean[][][] cells = new boolean[boardSize][boardSize][2];
+        boolean[][][] temp = new boolean[boardSize][boardSize][2];
+        for(int i=0; i<cells.length && i<boardSize; i++) {
+            for(int j=0; j<cells.length && j<boardSize; j++) {
+                temp[j][i][1] = cells[j][i][1];
+            }
+        }
+        cells = temp;
+        update();
+    }
+
+    void save() {
+        System.out.println("Which save file do you want to save to (1,2 or 3 - this will overwrite previous saves)?");
+        try {
+            FileWriter saveWriter = new FileWriter("SavedGame"+kb.nextInt()+".txt");
+            saveWriter.write(boardSize+"\n");
+            for(int i=0; i<boardSize; i++) {
+                for(int j=0; j<boardSize; j++) {
+                    if(cells[j][i][0]) saveWriter.write(ALIVE+" ");
+                    else saveWriter.write(DEAD+" ");
+                }
+                saveWriter.write("\n");
+            }
+            saveWriter.flush();
+            saveWriter.close();
+        } catch(IOException e) {
+            System.out.println("Oh no");
+        }
+        update();
+    }
+
+    void load() {
+        System.out.println("Which save file do you want to load (1,2 or 3)?");
+        readFile("SavedGame"+kb.nextInt()+".txt", true);
         update();
     }
 
     void update() { // clears the screen and prints the board
-        System.out.println(boardSize);
-        /*for(int i=0; i < boardSize; i++) {
+        for(int i=0; i < boardSize; i++) {
             for(int j=0; j < boardSize; j++) {
                 cells[j][i][0]=cells[j][i][1];
             }
@@ -155,7 +230,7 @@ public class GameOfLife
                 else System.out.print(DEAD + " ");
             }
             System.out.println();
-        }*/
+        }
     }
 
     void advance(int turns, boolean isWait) {

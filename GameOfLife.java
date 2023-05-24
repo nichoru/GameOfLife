@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 23/05/2023 - Board size is adjustable, save files and quit function implemented with animated reset
+ * @version 25/05/2023 - Added instructions so new players know how the game works
  */
 import java.util.Scanner;
 import java.io.File;
@@ -114,7 +114,7 @@ public class GameOfLife
     void menu() { // tells you the commands and lets you input them
         isStart = false;
         while(!isStart) {
-            System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board, x to quit\nPress l to load the most recent state saved, c to save the current state\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
+            System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board, x to quit, i to see instructions on how to play\nPress l to load the most recent state saved, c to save the current state\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
             isCommand = false;
             while(!isCommand) {
                 isCommand = true;
@@ -124,6 +124,8 @@ public class GameOfLife
                     case "b": size();
                     break;
                     case "c": save();
+                    break;
+                    case "i": help();
                     break;
                     case "l": load();
                     break;
@@ -154,7 +156,13 @@ public class GameOfLife
         kb.nextLine();
         reset();
     }
-
+    
+    void help() {
+        update();
+        System.out.println("Every cell is either alive ("+ALIVE+") or dead ("+DEAD+"). You can switch these states in the menu.\nOnce you start playing, the cells will follow some rules, one turn at a time:");
+        System.out.println("Rule 1 - any live cell with fewer than two live neighbours dies, as if by underpopulation\nRule 2 - any live cell with two or three live neighbours lives on to the next generation\nRule 3 - any live cell with more than three live neighbours dies, as if by overpopulation\nRule 4 - any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction\n");
+    }
+        
     void toggle() { // toggles player-selected cells between alive and dead then updates the screen
         update();
         System.out.println("To toggle a cell, enter its x and y coordinates (separated by a comma). To go back to the menu, type m");

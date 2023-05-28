@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 25/05/2023 - Added instructions so new players know how the game works
+ * @version 29/05/2023 - added automatic mode (stops when steady state is reached), started work on pause function
  */
 import java.util.Scanner;
 import java.io.File;
@@ -20,6 +20,7 @@ public class GameOfLife
     String[] toggleString = new String[2];
     boolean isStart = false;
     boolean isCommand;
+    boolean isSteady;
     int speed = 500;
     public GameOfLife() 
     {
@@ -114,37 +115,37 @@ public class GameOfLife
     void menu() { // tells you the commands and lets you input them
         isStart = false;
         while(!isStart) {
-            System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board, x to quit, i to see instructions on how to play\nPress l to load the most recent state saved, c to save the current state\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
+            System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board, x to quit, i to see instructions on how to play\nPress l to load a save file, c to save the current state\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
             isCommand = false;
             while(!isCommand) {
                 isCommand = true;
                 switch(kb.nextLine().toLowerCase()) {
                     case "a": speed();
-                    break;
+                        break;
                     case "b": size();
-                    break;
+                        break;
                     case "c": save();
-                    break;
+                        break;
                     case "i": help();
-                    break;
+                        break;
                     case "l": load();
-                    break;
+                        break;
                     case "q": advance(1,false);
-                    break;
+                        break;
                     case "r": reset();
-                    break;
+                        break;
                     case "s": isStart = true;
-                    break;
+                        break;
                     case "t": toggle();
-                    break;
+                        break;
                     case "x": title(false);
-                    break;
+                        break;
                     default: isCommand = false;
                 }
             }
         }
         update();
-        System.out.println("How many turns do you want to advance?");
+        System.out.println("How many turns do you want to advance? To turn on automatic mode, type -1");
         advance(kb.nextInt(),true);
     }
 
@@ -156,13 +157,13 @@ public class GameOfLife
         kb.nextLine();
         reset();
     }
-    
+
     void help() {
         update();
         System.out.println("Every cell is either alive ("+ALIVE+") or dead ("+DEAD+"). You can switch these states in the menu.\nOnce you start playing, the cells will follow some rules, one turn at a time:");
         System.out.println("Rule 1 - any live cell with fewer than two live neighbours dies, as if by underpopulation\nRule 2 - any live cell with two or three live neighbours lives on to the next generation\nRule 3 - any live cell with more than three live neighbours dies, as if by overpopulation\nRule 4 - any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction\n");
     }
-        
+
     void toggle() { // toggles player-selected cells between alive and dead then updates the screen
         update();
         System.out.println("To toggle a cell, enter its x and y coordinates (separated by a comma). To go back to the menu, type m");
@@ -242,24 +243,56 @@ public class GameOfLife
     }
 
     void advance(int turns, boolean isWait) {
-        for(int k=0; k < turns; k++) {
-            for(int i=0; i < boardSize; i++) {
-                for(int j=0; j < boardSize; j++) {
-                    if(cells[j][i][0]) {
-                        if(!(countAdjacent(j,i)==2 || countAdjacent(j,i)==3)) cells[j][i][1] = false;
-                    } else {
-                        if(countAdjacent(j,i)==3) cells[j][i][1] = true;
+        if(kb.hasNextLine()) kb.nextLine();
+        if(turns != -1) {
+            for(int k=0; k < turns && !kb.hasNextLine(); k++) {
+                for(int i=0; i < boardSize; i++) {
+                    for(int j=0; j < boardSize; j++) {
+                        if(cells[j][i][0]) {
+                            if(!(countAdjacent(j,i)==2 || countAdjacent(j,i)==3)) cells[j][i][1] = false;
+                        } else {
+                            if(countAdjacent(j,i)==3) cells[j][i][1] = true;
+                        }
                     }
                 }
+                if(isWait) {
+                    try {
+                        Thread.sleep(speed);
+                    } catch(Exception e) {
+                        System.out.println("Looks like something went wrong");
+                    }
+                }
+                update();
+                System.out.println("Press enter to return to the menu");
             }
-            if(isWait) {
+        } else {
+            isSteady = false;
+            while(!isSteady && !kb.hasNextLine()) {
+                for(int i=0; i < boardSize; i++) {
+                    for(int j=0; j < boardSize; j++) {
+                        if(cells[j][i][0]) {
+                            if(!(countAdjacent(j,i)==2 || countAdjacent(j,i)==3)) cells[j][i][1] = false;
+                        } else {
+                            if(countAdjacent(j,i)==3) cells[j][i][1] = true;
+                        }
+                    }
+                }
                 try {
                     Thread.sleep(speed);
                 } catch(Exception e) {
                     System.out.println("Looks like something went wrong");
                 }
+                isSteady = true;
+                for(int i=0; i < boardSize; i++) {
+                    for(int j=0; j < boardSize; j++) {
+                        if(cells[j][i][0] != cells[j][i][1]) {
+                            isSteady = false;
+                        }
+                    }
+                }
+                update();
+                System.out.println("Press enter to return to the menu");
             }
-            update();
         }
         menu();
     }

@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 29/05/2023 - added automatic mode (stops when steady state is reached), started work on pause function
+ * @version 30/05/2023 - worked on making automatic mode work if it hits a recurring state (still needs trialling), removed pause function
  */
 import java.util.Scanner;
 import java.io.File;
@@ -12,7 +12,8 @@ import java.io.FileWriter;
 public class GameOfLife
 {
     Scanner kb = new Scanner(System.in);
-    int boardSize = 30;
+    int boardSize = 40;
+    int genSize = 1;
     final String ALIVE = "o";
     final String DEAD = "_";
     final int RESETSPEED = 25;
@@ -130,7 +131,7 @@ public class GameOfLife
                         break;
                     case "l": load();
                         break;
-                    case "q": advance(1,false);
+                    case "q": advanceOne(false,true);
                         break;
                     case "r": reset();
                         break;
@@ -146,7 +147,7 @@ public class GameOfLife
         }
         update();
         System.out.println("How many turns do you want to advance? To turn on automatic mode, type -1");
-        advance(kb.nextInt(),true);
+        advance(kb.nextInt());
     }
 
     void title(boolean isStart) {
@@ -227,89 +228,101 @@ public class GameOfLife
     }
 
     void update() { // clears the screen and prints the board
-        for(int i=0; i < boardSize; i++) {
-            for(int j=0; j < boardSize; j++) {
-                cells[j][i][0]=cells[j][i][1];
+        for(int h=0; h < genSize; h++) {
+            for(int i=0; i < boardSize; i++) {
+                for(int j=0; j < boardSize; j++) {
+                    cells[j][i][h]=cells[j][i][h+1];
+                }
             }
         }
         System.out.print("\f");
         for(int i=0; i < boardSize; i++) { // prints the board
             for(int j=0; j < boardSize; j++) {
-                if(cells[j][i][1]) System.out.print(ALIVE + " ");
+                if(cells[j][i][genSize]) System.out.print(ALIVE + " ");
                 else System.out.print(DEAD + " ");
             }
             System.out.println();
         }
     }
 
-    void advance(int turns, boolean isWait) {
-        if(kb.hasNextLine()) kb.nextLine();
-        if(turns != -1) {
-            for(int k=0; k < turns && !kb.hasNextLine(); k++) {
-                for(int i=0; i < boardSize; i++) {
-                    for(int j=0; j < boardSize; j++) {
-                        if(cells[j][i][0]) {
-                            if(!(countAdjacent(j,i)==2 || countAdjacent(j,i)==3)) cells[j][i][1] = false;
-                        } else {
-                            if(countAdjacent(j,i)==3) cells[j][i][1] = true;
-                        }
-                    }
-                }
-                if(isWait) {
-                    try {
-                        Thread.sleep(speed);
-                    } catch(Exception e) {
-                        System.out.println("Looks like something went wrong");
-                    }
-                }
-                update();
-                System.out.println("Press enter to return to the menu");
+    void advance(int turns) {
+        if(turns > -1) {
+            for(int k=0; k < turns; k++) {
+                advanceOne(true, true);
             }
         } else {
             isSteady = false;
-            while(!isSteady && !kb.hasNextLine()) {
-                for(int i=0; i < boardSize; i++) {
-                    for(int j=0; j < boardSize; j++) {
-                        if(cells[j][i][0]) {
-                            if(!(countAdjacent(j,i)==2 || countAdjacent(j,i)==3)) cells[j][i][1] = false;
-                        } else {
-                            if(countAdjacent(j,i)==3) cells[j][i][1] = true;
+            changeGenSize(-turns);
+            int yayya = 1;
+            while(!isSteady) {
+                advanceOne(true, false);
+                for(int h=0; h < genSize; h++) {
+                    isSteady = true;
+                    for(int i=0; i < boardSize; i++) {
+                        for(int j=0; j < boardSize; j++) {
+                            if(cells[j][i][h] != cells[j][i][genSize]) {
+                                isSteady = false;
+                            }
                         }
                     }
-                }
-                try {
-                    Thread.sleep(speed);
-                } catch(Exception e) {
-                    System.out.println("Looks like something went wrong");
-                }
-                isSteady = true;
-                for(int i=0; i < boardSize; i++) {
-                    for(int j=0; j < boardSize; j++) {
-                        if(cells[j][i][0] != cells[j][i][1]) {
-                            isSteady = false;
-                        }
-                    }
+                    if(isSteady) break;
                 }
                 update();
-                System.out.println("Press enter to return to the menu");
+                yayya++;
+                System.out.println(yayya);
             }
+            changeGenSize(1);
         }
         menu();
     }
 
-    int countAdjacent(int x, int y) { // counts how many cells are alive surrounding the cell given to it
+    void changeGenSize(int newSize) {
+        boolean[][][] temp = new boolean[boardSize][boardSize][newSize+1];
+        for(int i=0; i<cells.length && i<boardSize; i++) {
+            for(int j=0; j<cells.length && j<boardSize; j++) {
+                for(int k=0; k<newSize+1; k++) {
+                    temp[j][i][k] = cells[j][i][genSize];
+                }
+            }
+        }
+        cells = temp;
+        genSize = newSize;
+        update();
+    }
+
+    void advanceOne(boolean isWait, boolean isUpdate) {
+        for(int i=0; i < boardSize; i++) {
+            for(int j=0; j < boardSize; j++) {
+                if(cells[j][i][genSize-1]) {
+                    if(!(countAdjacent(j,i,genSize-1)==2 || countAdjacent(j,i,genSize-1)==3)) cells[j][i][genSize] = false;
+                } else {
+                    if(countAdjacent(j,i,genSize-1)==3) cells[j][i][genSize] = true;
+                }
+            }
+        }
+        if(isWait) {
+            try {
+                Thread.sleep(speed);
+            } catch(Exception e) {
+                System.out.println("Looks like something went wrong");
+            }
+        }
+        if(isUpdate) update();
+    }
+
+    int countAdjacent(int x, int y, int gen) { // counts how many cells are alive surrounding the cell given to it
         int surroundingNum = 0;
         if(y>0) {
-            if(x>0) if(cells[x-1][y-1][0]) surroundingNum++;
-            if(cells[x][y-1][0]) surroundingNum++;
-            if(x<boardSize-1) if(cells[x+1][y-1][0]) surroundingNum++;
+            if(x>0) if(cells[x-1][y-1][gen]) surroundingNum++;
+            if(cells[x][y-1][gen]) surroundingNum++;
+            if(x<boardSize-1) if(cells[x+1][y-1][gen]) surroundingNum++;
         }
-        if(x>0) if(cells[x-1][y][0]) surroundingNum++;
-        if(x<boardSize-1) if(cells[x+1][y][0]) surroundingNum++;
+        if(x>0) if(cells[x-1][y][gen]) surroundingNum++;
+        if(x<boardSize-1) if(cells[x+1][y][gen]) surroundingNum++;
         if(y<boardSize-1) {
-            if(x>0) if(cells[x-1][y+1][0]) surroundingNum++;
-            if(cells[x][y+1][0]) surroundingNum++;
-            if(x<boardSize-1) if(cells[x+1][y+1][0]) surroundingNum++;
+            if(x>0) if(cells[x-1][y+1][gen]) surroundingNum++;
+            if(cells[x][y+1][gen]) surroundingNum++;
+            if(x<boardSize-1) if(cells[x+1][y+1][gen]) surroundingNum++;
         }
         return surroundingNum;
     }

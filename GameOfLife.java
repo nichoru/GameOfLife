@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 30/05/2023 - worked on making automatic mode work if it hits a recurring state (still needs trialling), removed pause function
+ * @version 6/06/2023 - automatic mode fully works, worked on making cells be able to wrap around the sides
  */
 import java.util.Scanner;
 import java.io.File;
@@ -22,6 +22,7 @@ public class GameOfLife
     boolean isStart = false;
     boolean isCommand;
     boolean isSteady;
+    boolean isWrap = false;
     int speed = 500;
     public GameOfLife() 
     {
@@ -110,13 +111,14 @@ public class GameOfLife
         }
         for(int i=0; i < boardSize; i++) cells[i][boardSize-1][1] = false;
         update();
-        menu();
     }
 
     void menu() { // tells you the commands and lets you input them
         isStart = false;
         while(!isStart) {
             System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board, x to quit, i to see instructions on how to play\nPress l to load a save file, c to save the current state\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
+            if(isWrap) System.out.println("Press d to make cells that go off screen not come out the other side");
+            else System.out.println("Press d to make cells that go off screen come out the other side");
             isCommand = false;
             while(!isCommand) {
                 isCommand = true;
@@ -126,6 +128,8 @@ public class GameOfLife
                     case "b": size();
                         break;
                     case "c": save();
+                        break;
+                    case "d": wrap();
                         break;
                     case "i": help();
                         break;
@@ -146,7 +150,7 @@ public class GameOfLife
             }
         }
         update();
-        System.out.println("How many turns do you want to advance? To turn on automatic mode, type -1");
+        System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)");
         advance(kb.nextInt());
     }
 
@@ -157,12 +161,19 @@ public class GameOfLife
         System.out.println("Press enter to start");
         kb.nextLine();
         reset();
+        if(isStart) menu();
     }
 
     void help() {
         update();
         System.out.println("Every cell is either alive ("+ALIVE+") or dead ("+DEAD+"). You can switch these states in the menu.\nOnce you start playing, the cells will follow some rules, one turn at a time:");
         System.out.println("Rule 1 - any live cell with fewer than two live neighbours dies, as if by underpopulation\nRule 2 - any live cell with two or three live neighbours lives on to the next generation\nRule 3 - any live cell with more than three live neighbours dies, as if by overpopulation\nRule 4 - any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction\n");
+    }
+
+    void wrap() {
+        if(isWrap) isWrap = false;
+        else isWrap = true;
+        update();
     }
 
     void toggle() { // toggles player-selected cells between alive and dead then updates the screen
@@ -253,7 +264,6 @@ public class GameOfLife
         } else {
             isSteady = false;
             changeGenSize(-turns);
-            int yayya = 1;
             while(!isSteady) {
                 advanceOne(true, false);
                 for(int h=0; h < genSize; h++) {
@@ -268,8 +278,6 @@ public class GameOfLife
                     if(isSteady) break;
                 }
                 update();
-                yayya++;
-                System.out.println(yayya);
             }
             changeGenSize(1);
         }
@@ -313,16 +321,30 @@ public class GameOfLife
     int countAdjacent(int x, int y, int gen) { // counts how many cells are alive surrounding the cell given to it
         int surroundingNum = 0;
         if(y>0) {
-            if(x>0) if(cells[x-1][y-1][gen]) surroundingNum++;
+            if(x>0 && cells[x-1][y-1][gen]) surroundingNum++;
             if(cells[x][y-1][gen]) surroundingNum++;
-            if(x<boardSize-1) if(cells[x+1][y-1][gen]) surroundingNum++;
+            if(x<boardSize-1 && cells[x+1][y-1][gen]) surroundingNum++;
+        } else if(isWrap) {
+            if(x>0 && cells[x-1][boardSize-1][gen]) surroundingNum++;
+            if(x==0 && cells[boardSize-1][boardSize-1][gen]) surroundingNum++;
+            if(cells[x][boardSize-1][gen]) surroundingNum++;
+            if(x<boardSize-1 && cells[x+1][boardSize-1][gen]) surroundingNum++;
+            if(x==boardSize-1 && cells[0][boardSize-1][gen]) surroundingNum++;
         }
-        if(x>0) if(cells[x-1][y][gen]) surroundingNum++;
-        if(x<boardSize-1) if(cells[x+1][y][gen]) surroundingNum++;
+        if(x>0 && cells[x-1][y][gen]) surroundingNum++;
+        if(x==0 && isWrap && cells[boardSize-1][y][gen]) surroundingNum++;
+        if(x<boardSize-1 && cells[x+1][y][gen]) surroundingNum++;
+        if(x==boardSize-1 && isWrap && cells[0][y][gen]) surroundingNum++;
         if(y<boardSize-1) {
-            if(x>0) if(cells[x-1][y+1][gen]) surroundingNum++;
+            if(x>0 && cells[x-1][y+1][gen]) surroundingNum++;
             if(cells[x][y+1][gen]) surroundingNum++;
-            if(x<boardSize-1) if(cells[x+1][y+1][gen]) surroundingNum++;
+            if(x<boardSize-1 && cells[x+1][y+1][gen]) surroundingNum++;
+        } else if(isWrap) {
+            if(x>0 && cells[x-1][0][gen]) surroundingNum++;
+            if(x==0 && cells[boardSize-1][0][gen]) surroundingNum++;
+            if(cells[x][0][gen]) surroundingNum++;
+            if(x<boardSize-1 && cells[x+1][0][gen]) surroundingNum++;
+            if(x==boardSize-1 && cells[0][0][gen]) surroundingNum++;
         }
         return surroundingNum;
     }

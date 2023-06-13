@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 6/06/2023 - automatic mode fully works, worked on making cells be able to wrap around the sides
+ * @version 13/06/2023 - cells can wrap around sides (this is adjustable), cell graphics were changed
  */
 import java.util.Scanner;
 import java.io.File;
@@ -14,8 +14,8 @@ public class GameOfLife
     Scanner kb = new Scanner(System.in);
     int boardSize = 40;
     int genSize = 1;
-    final String ALIVE = "o";
-    final String DEAD = "_";
+    final String ALIVE = "⬛";
+    final String DEAD = "⬜";
     final int RESETSPEED = 25;
     boolean[][][] cells = new boolean[boardSize][boardSize][2];
     String[] toggleString = new String[2];
@@ -24,11 +24,9 @@ public class GameOfLife
     boolean isSteady;
     boolean isWrap = false;
     int speed = 500;
-    public GameOfLife() 
-    {
+    public void main(String[] args) {
         title(true);
     }
-
     void readFile(String fileName, boolean isAnimated) {
         File myFile = new File(fileName);
         try {
@@ -56,8 +54,7 @@ public class GameOfLife
                     }
                     fileLine = fileReader.nextLine().split(" ");
                     for(int j=0; j < boardSize; j++) {
-                        if(fileLine[j].equals(ALIVE)) cells[j][i][1] = true;
-                        else cells[j][i][1] = false;
+                        cells[j][i][1] = fileLine[j].equals("o");
                     }
                     update();
                 }
@@ -68,15 +65,13 @@ public class GameOfLife
                 }
                 fileLine = fileReader.nextLine().split(" ");
                 for(int i=0; i < boardSize; i++) {
-                    if(fileLine[i].equals(ALIVE)) cells[i][boardSize-1][1] = true;
-                    else cells[i][boardSize-1][1] = false;
+                    cells[i][boardSize-1][1] = fileLine[i].equals("o");
                 }
             } else {
                 for(int i=0; i < boardSize; i++) {
                     fileLine = fileReader.nextLine().split(" ");
                     for(int j=0; j < boardSize; j++) {
-                        if(fileLine[j].equals(ALIVE)) cells[j][i][1] = true;
-                        else cells[j][i][1] = false;
+                        cells[j][i][1] = fileLine[j].equals("o");
                     }
                 }
             }
@@ -122,29 +117,29 @@ public class GameOfLife
             isCommand = false;
             while(!isCommand) {
                 isCommand = true;
-                switch(kb.nextLine().toLowerCase()) {
+                switch (kb.nextLine().toLowerCase()) {
                     case "a": speed();
-                        break;
+                    break;
                     case "b": size();
-                        break;
+                    break;
                     case "c": save();
-                        break;
+                    break;
                     case "d": wrap();
-                        break;
+                    break;
                     case "i": help();
-                        break;
+                    break;
                     case "l": load();
-                        break;
-                    case "q": advanceOne(false,true);
-                        break;
+                    break;
+                    case "q": advanceOne(false, true);
+                    break;
                     case "r": reset();
-                        break;
+                    break;
                     case "s": isStart = true;
-                        break;
+                    break;
                     case "t": toggle();
-                        break;
+                    break;
                     case "x": title(false);
-                        break;
+                    break;
                     default: isCommand = false;
                 }
             }
@@ -155,8 +150,7 @@ public class GameOfLife
     }
 
     void title(boolean isStart) {
-        if(isStart) readFile("TitleScreen.txt", false);
-        else readFile("TitleScreen.txt", true);
+        readFile("TitleScreen.txt", !isStart);
         update();
         System.out.println("Press enter to start");
         kb.nextLine();
@@ -166,13 +160,13 @@ public class GameOfLife
 
     void help() {
         update();
+        System.out.println("Though 'game' is in the title, this is not a game - more of an automaton.");
         System.out.println("Every cell is either alive ("+ALIVE+") or dead ("+DEAD+"). You can switch these states in the menu.\nOnce you start playing, the cells will follow some rules, one turn at a time:");
         System.out.println("Rule 1 - any live cell with fewer than two live neighbours dies, as if by underpopulation\nRule 2 - any live cell with two or three live neighbours lives on to the next generation\nRule 3 - any live cell with more than three live neighbours dies, as if by overpopulation\nRule 4 - any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction\n");
     }
 
     void wrap() {
-        if(isWrap) isWrap = false;
-        else isWrap = true;
+        isWrap = !isWrap;
         update();
     }
 
@@ -180,12 +174,8 @@ public class GameOfLife
         update();
         System.out.println("To toggle a cell, enter its x and y coordinates (separated by a comma). To go back to the menu, type m");
         toggleString = kb.nextLine().split(",");
-        while(!toggleString[0].toLowerCase().equals("m")) {
-            if(cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1]) {
-                cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = false;
-            } else {
-                cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = true;
-            }
+        while(!toggleString[0].equalsIgnoreCase("m")) {
+            cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = !cells[Integer.parseInt(toggleString[0]) - 1][Integer.parseInt(toggleString[1]) - 1][1];
             update();
             System.out.println("To toggle a cell, enter its x and y coordinates (separated by a comma). To go back to the menu, type m");
             toggleString = kb.nextLine().split(",");
@@ -219,8 +209,8 @@ public class GameOfLife
             saveWriter.write(boardSize+"\n");
             for(int i=0; i<boardSize; i++) {
                 for(int j=0; j<boardSize; j++) {
-                    if(cells[j][i][0]) saveWriter.write(ALIVE+" ");
-                    else saveWriter.write(DEAD+" ");
+                    if(cells[j][i][0]) saveWriter.write("o ");
+                    else saveWriter.write("_ ");
                 }
                 saveWriter.write("\n");
             }
@@ -249,8 +239,8 @@ public class GameOfLife
         System.out.print("\f");
         for(int i=0; i < boardSize; i++) { // prints the board
             for(int j=0; j < boardSize; j++) {
-                if(cells[j][i][genSize]) System.out.print(ALIVE + " ");
-                else System.out.print(DEAD + " ");
+                if(cells[j][i][genSize]) System.out.print(ALIVE+" ");
+                else System.out.print(DEAD+" ");
             }
             System.out.println();
         }
@@ -270,8 +260,9 @@ public class GameOfLife
                     isSteady = true;
                     for(int i=0; i < boardSize; i++) {
                         for(int j=0; j < boardSize; j++) {
-                            if(cells[j][i][h] != cells[j][i][genSize]) {
+                            if (cells[j][i][h] != cells[j][i][genSize]) {
                                 isSteady = false;
+                                break;
                             }
                         }
                     }
@@ -322,8 +313,10 @@ public class GameOfLife
         int surroundingNum = 0;
         if(y>0) {
             if(x>0 && cells[x-1][y-1][gen]) surroundingNum++;
+            if(x==0 && cells[boardSize-1][y-1][gen]) surroundingNum++;
             if(cells[x][y-1][gen]) surroundingNum++;
             if(x<boardSize-1 && cells[x+1][y-1][gen]) surroundingNum++;
+            if(x==boardSize-1 && cells[0][y-1][gen]) surroundingNum++;
         } else if(isWrap) {
             if(x>0 && cells[x-1][boardSize-1][gen]) surroundingNum++;
             if(x==0 && cells[boardSize-1][boardSize-1][gen]) surroundingNum++;
@@ -337,8 +330,10 @@ public class GameOfLife
         if(x==boardSize-1 && isWrap && cells[0][y][gen]) surroundingNum++;
         if(y<boardSize-1) {
             if(x>0 && cells[x-1][y+1][gen]) surroundingNum++;
+            if(x==0 && cells[boardSize-1][y+1][gen]) surroundingNum++;
             if(cells[x][y+1][gen]) surroundingNum++;
             if(x<boardSize-1 && cells[x+1][y+1][gen]) surroundingNum++;
+            if(x==boardSize-1 && cells[0][y+1][gen]) surroundingNum++;
         } else if(isWrap) {
             if(x>0 && cells[x-1][0][gen]) surroundingNum++;
             if(x==0 && cells[boardSize-1][0][gen]) surroundingNum++;
@@ -347,5 +342,5 @@ public class GameOfLife
             if(x==boardSize-1 && cells[0][0][gen]) surroundingNum++;
         }
         return surroundingNum;
-    }
+    }//2,3,4,6,8,9 1
 }

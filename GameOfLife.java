@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 13/06/2023 - cells can wrap around sides (this is adjustable), cell graphics were changed
+ * @version 19/06/2023 - title screen trialling, starting work on epilepsy precautions/mode
  */
 import java.util.Scanner;
 import java.io.File;
@@ -24,6 +24,9 @@ public class GameOfLife
     boolean isSteady;
     boolean isWrap = false;
     int speed = 500;
+    public GameOfLife() {
+        title(true);
+    }
     public void main(String[] args) {
         title(true);
     }
@@ -184,8 +187,17 @@ public class GameOfLife
     }
 
     void speed() {
-        System.out.println("How often do you want the board to update (in milliseconds)?");
-        speed = kb.nextInt();
+        int speedTemp = 0;
+        while(speedTemp<350) {
+            System.out.println("How often do you want the board to update (in milliseconds)?");
+            speedTemp = kb.nextInt();
+            if(speedTemp>=350) break;
+            System.out.println("Warning: this speed could cause a seizure if you have photosensitive epilepsy. Proceed? (y/n)");
+            kb.nextLine();
+            if(kb.nextLine().equalsIgnoreCase("y")) break;
+            System.out.print("Choose a number that's at least 350. ");
+        }
+        speed = speedTemp;
         update();
     }
 

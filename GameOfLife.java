@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 19/06/2023 - title screen trialling, starting work on epilepsy precautions/mode
+ * @version 22/06/2023 - finished epilepsy mode and warning
  */
 import java.util.Scanner;
 import java.io.File;
@@ -23,13 +23,16 @@ public class GameOfLife
     boolean isCommand;
     boolean isSteady;
     boolean isWrap = false;
+    boolean isEpilepsyMode = true;
     int speed = 500;
     public GameOfLife() {
         title(true);
     }
+
     public void main(String[] args) {
         title(true);
     }
+
     void readFile(String fileName, boolean isAnimated) {
         File myFile = new File(fileName);
         try {
@@ -39,7 +42,7 @@ public class GameOfLife
             cells = tempBoard;
             String[] fileLine = new String[boardSize];
             fileLine = fileReader.nextLine().split(" ");
-            if(isAnimated) {
+            if(isAnimated && !isEpilepsyMode) {
                 for(int i=0; i < boardSize; i++) cells[i][0][1] = true;
                 update();
                 for(int i=0; i < boardSize-1; i++) {
@@ -84,31 +87,40 @@ public class GameOfLife
     }
 
     void reset() { // sets all cells to false (dead) then updates the screen
-        for(int i=0; i < boardSize; i++) cells[i][0][1] = true;
-        update();
-        for(int i=0; i < boardSize-1; i++) {
+        if(isEpilepsyMode) {
+            for(int i=0; i < boardSize; i++) {
+                for(int j=0; j < boardSize; j++) {
+                    cells[j][i][1] = false;
+                }
+            }
+            update();
+        } else {
+            for(int i=0; i < boardSize; i++) cells[i][0][1] = true;
+            update();
+            for(int i=0; i < boardSize-1; i++) {
+                try {
+                    Thread.sleep(RESETSPEED);
+                } catch(Exception e) {
+                    System.out.println("Looks like something went wrong");
+                }
+                for(int j=0; j < boardSize; j++) cells[j][i+1][1] = true;
+                update();
+                try {
+                    Thread.sleep(RESETSPEED);
+                } catch(Exception e) {
+                    System.out.println("Looks like something went wrong");
+                }
+                for(int j=0; j < boardSize; j++) cells[j][i][1] = false;
+                update();
+            }
             try {
-                Thread.sleep(RESETSPEED);
+                Thread.sleep(100);
             } catch(Exception e) {
                 System.out.println("Looks like something went wrong");
             }
-            for(int j=0; j < boardSize; j++) cells[j][i+1][1] = true;
-            update();
-            try {
-                Thread.sleep(RESETSPEED);
-            } catch(Exception e) {
-                System.out.println("Looks like something went wrong");
-            }
-            for(int j=0; j < boardSize; j++) cells[j][i][1] = false;
+            for(int i=0; i < boardSize; i++) cells[i][boardSize-1][1] = false;
             update();
         }
-        try {
-            Thread.sleep(100);
-        } catch(Exception e) {
-            System.out.println("Looks like something went wrong");
-        }
-        for(int i=0; i < boardSize; i++) cells[i][boardSize-1][1] = false;
-        update();
     }
 
     void menu() { // tells you the commands and lets you input them
@@ -122,27 +134,27 @@ public class GameOfLife
                 isCommand = true;
                 switch (kb.nextLine().toLowerCase()) {
                     case "a": speed();
-                    break;
+                        break;
                     case "b": size();
-                    break;
+                        break;
                     case "c": save();
-                    break;
+                        break;
                     case "d": wrap();
-                    break;
+                        break;
                     case "i": help();
-                    break;
+                        break;
                     case "l": load();
-                    break;
+                        break;
                     case "q": advanceOne(false, true);
-                    break;
+                        break;
                     case "r": reset();
-                    break;
+                        break;
                     case "s": isStart = true;
-                    break;
+                        break;
                     case "t": toggle();
-                    break;
+                        break;
                     case "x": title(false);
-                    break;
+                        break;
                     default: isCommand = false;
                 }
             }
@@ -157,6 +169,11 @@ public class GameOfLife
         update();
         System.out.println("Press enter to start");
         kb.nextLine();
+        if(isStart) {
+            System.out.println("WARNING - this game contains flashing lights which could trigger seizures in people with photosensitive epilepsy. Would you like to disable these? (y/n)");
+            String answer = kb.nextLine();
+            if(answer.equalsIgnoreCase("n") || answer.equalsIgnoreCase("no")) isEpilepsyMode = false;
+        }
         reset();
         if(isStart) menu();
     }
@@ -191,10 +208,7 @@ public class GameOfLife
         while(speedTemp<350) {
             System.out.println("How often do you want the board to update (in milliseconds)?");
             speedTemp = kb.nextInt();
-            if(speedTemp>=350) break;
-            System.out.println("Warning: this speed could cause a seizure if you have photosensitive epilepsy. Proceed? (y/n)");
-            kb.nextLine();
-            if(kb.nextLine().equalsIgnoreCase("y")) break;
+            if(speedTemp>=350 || !isEpilepsyMode) break;
             System.out.print("Choose a number that's at least 350. ");
         }
         speed = speedTemp;

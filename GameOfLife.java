@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 22/06/2023 - finished epilepsy mode and warning
+ * @version 26/06/2023 - started on invalid input checks (work on size)
  */
 import java.util.Scanner;
 import java.io.File;
@@ -24,6 +24,7 @@ public class GameOfLife
     boolean isSteady;
     boolean isWrap = false;
     boolean isEpilepsyMode = true;
+    boolean isValid;
     int speed = 500;
     public GameOfLife() {
         title(true);
@@ -156,12 +157,26 @@ public class GameOfLife
                     case "x": title(false);
                         break;
                     default: isCommand = false;
+                        invalidInput();
                 }
             }
         }
         update();
         System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)");
-        advance(kb.nextInt());
+        isValid = false;
+        while(!isValid) {
+            isValid = true;
+            try {
+                advance(kb.nextInt());
+            } catch(Exception e) {
+                invalidInput();
+            }
+        }
+    }
+
+    void invalidInput() {
+        System.out.println("Invalid input. Try again.");
+        isValid = false;
     }
 
     void title(boolean isStart) {
@@ -192,13 +207,25 @@ public class GameOfLife
 
     void toggle() { // toggles player-selected cells between alive and dead then updates the screen
         update();
-        System.out.println("To toggle a cell, enter its x and y coordinates (separated by a comma). To go back to the menu, type m");
-        toggleString = kb.nextLine().split(",");
-        while(!toggleString[0].equalsIgnoreCase("m")) {
-            cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = !cells[Integer.parseInt(toggleString[0]) - 1][Integer.parseInt(toggleString[1]) - 1][1];
-            update();
+        toggleString[0] = ".";
+        while(!toggleString[0].equalsIgnoreCase("m") || toggleString.length!=1) {
             System.out.println("To toggle a cell, enter its x and y coordinates (separated by a comma). To go back to the menu, type m");
-            toggleString = kb.nextLine().split(",");
+            isValid = false;
+            while(!isValid) {
+                isValid = true;
+                try {
+                    toggleString = kb.nextLine().split(",");
+                    if(toggleString[0].equalsIgnoreCase("m") && toggleString.length==1) break;
+                    if(toggleString.length!=2) {
+                        invalidInput();
+                        break;
+                    }
+                    cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = !cells[Integer.parseInt(toggleString[0]) - 1][Integer.parseInt(toggleString[1]) - 1][1];
+                    update();
+                } catch(Exception e) {
+                    invalidInput();
+                }
+            }
         }
         update();
     }
@@ -207,7 +234,15 @@ public class GameOfLife
         int speedTemp = 0;
         while(speedTemp<350) {
             System.out.println("How often do you want the board to update (in milliseconds)?");
-            speedTemp = kb.nextInt();
+            isValid = false;
+            while(!isValid) {
+                isValid = true;
+                try {
+                    speedTemp = Integer.parseInt(kb.nextLine());
+                } catch(Exception e) {
+                    invalidInput();
+                }
+            }
             if(speedTemp>=350 || !isEpilepsyMode) break;
             System.out.print("Choose a number that's at least 350. ");
         }
@@ -217,8 +252,17 @@ public class GameOfLife
 
     void size() {
         System.out.println("How wide/tall do you want the board to be?");
-        boardSize = kb.nextInt();
-        boolean[][][] temp = new boolean[boardSize][boardSize][2];
+        boolean[][][] temp = new boolean[boardSize][boardSize][2];;
+        isValid = false;
+        while(!isValid) {
+            isValid = true;
+            try {
+                boardSize = Integer.parseInt(kb.nextLine());
+                temp = new boolean[boardSize][boardSize][2];
+            } catch(Exception e) {
+                invalidInput();
+            }
+        }
         for(int i=0; i<cells.length && i<boardSize; i++) {
             for(int j=0; j<cells.length && j<boardSize; j++) {
                 temp[j][i][1] = cells[j][i][1];

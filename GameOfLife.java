@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 26/06/2023 - started on invalid input checks (work on size)
+ * @version 29/06/2023 - nearly done with invalid input checks (work on load)
  */
 import java.util.Scanner;
 import java.io.File;
@@ -167,7 +167,7 @@ public class GameOfLife
         while(!isValid) {
             isValid = true;
             try {
-                advance(kb.nextInt());
+                advance(Integer.parseInt(kb.nextLine()));
             } catch(Exception e) {
                 invalidInput();
             }
@@ -239,6 +239,7 @@ public class GameOfLife
                 isValid = true;
                 try {
                     speedTemp = Integer.parseInt(kb.nextLine());
+                    if(speedTemp<0) invalidInput();
                 } catch(Exception e) {
                     invalidInput();
                 }
@@ -258,6 +259,7 @@ public class GameOfLife
             isValid = true;
             try {
                 boardSize = Integer.parseInt(kb.nextLine());
+                if(boardSize==0) invalidInput();
                 temp = new boolean[boardSize][boardSize][2];
             } catch(Exception e) {
                 invalidInput();
@@ -274,20 +276,28 @@ public class GameOfLife
 
     void save() {
         System.out.println("Which save file do you want to save to (1,2 or 3 - this will overwrite previous saves)?");
-        try {
-            FileWriter saveWriter = new FileWriter("SavedGame"+kb.nextInt()+".txt");
-            saveWriter.write(boardSize+"\n");
-            for(int i=0; i<boardSize; i++) {
-                for(int j=0; j<boardSize; j++) {
-                    if(cells[j][i][0]) saveWriter.write("o ");
-                    else saveWriter.write("_ ");
+        isValid = false;
+        while(!isValid) {
+            isValid = true;
+            try {
+                int tempFileNum = Integer.parseInt(kb.nextLine());
+                if(tempFileNum!=1 && tempFileNum!=2 && tempFileNum!=3) invalidInput();
+                FileWriter saveWriter = new FileWriter("SavedGame"+tempFileNum+".txt");
+                saveWriter.write(boardSize+"\n");
+                for(int i=0; i<boardSize; i++) {
+                    for(int j=0; j<boardSize; j++) {
+                        if(cells[j][i][0]) saveWriter.write("o ");
+                        else saveWriter.write("_ ");
+                    }
+                    saveWriter.write("\n");
                 }
-                saveWriter.write("\n");
+                saveWriter.flush();
+                saveWriter.close();
+            } catch(IOException e) {
+                invalidInput();
+            } catch(Exception e) {
+                invalidInput();
             }
-            saveWriter.flush();
-            saveWriter.close();
-        } catch(IOException e) {
-            System.out.println("Oh no");
         }
         update();
     }

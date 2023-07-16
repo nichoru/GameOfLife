@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 29/06/2023 - nearly done with invalid input checks (work on load)
+ * @version 17/07/2023 - just need to work on numbers along sides, comments and automatic mode limit
  */
 import java.util.Scanner;
 import java.io.File;
@@ -83,7 +83,7 @@ public class GameOfLife
                 }
             }
         } catch(IOException e) {
-            System.out.println("Oopsies");
+            invalidInput();
         }
     }
 
@@ -127,7 +127,7 @@ public class GameOfLife
     void menu() { // tells you the commands and lets you input them
         isStart = false;
         while(!isStart) {
-            System.out.println("Press t to toggle cell lives, s to start, q to advance one turn, r to reset board, x to quit, i to see instructions on how to play\nPress l to load a save file, c to save the current state\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
+            System.out.println("Press t to toggle (change) cell lives, s to start, q to quick advance one turn, r to reset board, x to quit, i to see instructions on how to play\nPress l to load a save file, c to save the current state\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
             if(isWrap) System.out.println("Press d to make cells that go off screen not come out the other side");
             else System.out.println("Press d to make cells that go off screen come out the other side");
             isCommand = false;
@@ -190,6 +190,7 @@ public class GameOfLife
             if(answer.equalsIgnoreCase("n") || answer.equalsIgnoreCase("no")) isEpilepsyMode = false;
         }
         reset();
+        help();
         if(isStart) menu();
     }
 
@@ -218,10 +219,10 @@ public class GameOfLife
                     if(toggleString[0].equalsIgnoreCase("m") && toggleString.length==1) break;
                     if(toggleString.length!=2) {
                         invalidInput();
-                        break;
+                    } else {
+                        cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = !cells[Integer.parseInt(toggleString[0]) - 1][Integer.parseInt(toggleString[1]) - 1][1];
+                        update();
                     }
-                    cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = !cells[Integer.parseInt(toggleString[0]) - 1][Integer.parseInt(toggleString[1]) - 1][1];
-                    update();
                 } catch(Exception e) {
                     invalidInput();
                 }
@@ -260,6 +261,10 @@ public class GameOfLife
             try {
                 boardSize = Integer.parseInt(kb.nextLine());
                 if(boardSize==0) invalidInput();
+                if(boardSize>39) {
+                    System.out.println("Board must be between 1 and 39 cells wide/tall");
+                    isValid = false;
+                }
                 temp = new boolean[boardSize][boardSize][2];
             } catch(Exception e) {
                 invalidInput();
@@ -304,7 +309,15 @@ public class GameOfLife
 
     void load() {
         System.out.println("Which save file do you want to load (1,2 or 3)?");
-        readFile("SavedGame"+kb.nextInt()+".txt", true);
+        isValid = false;
+        while(!isValid) {
+            isValid = true;
+            try {
+                readFile("SavedGame"+Integer.parseInt(kb.nextLine())+".txt", true);
+            } catch(Exception e) {
+                invalidInput();
+            }
+        }
         update();
     }
 
@@ -317,6 +330,11 @@ public class GameOfLife
             }
         }
         System.out.print("\f");
+        /*for(int i=0; i < boardSize; i++) {
+            System.out.print(i+1+" ");
+        }
+        System.out.println();
+        ^ Spacing needs work*/
         for(int i=0; i < boardSize; i++) { // prints the board
             for(int j=0; j < boardSize; j++) {
                 if(cells[j][i][genSize]) System.out.print(ALIVE+" ");
@@ -422,5 +440,5 @@ public class GameOfLife
             if(x==boardSize-1 && cells[0][0][gen]) surroundingNum++;
         }
         return surroundingNum;
-    }//2,3,4,6,8,9 1
+    }
 }

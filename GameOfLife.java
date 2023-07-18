@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 17/07/2023 - just need to work on numbers along sides, comments and automatic mode limit
+ * @version 18/07/2023 - finished work on numbers along sides, need to make some design decisions and comments
  */
 import java.util.Scanner;
 import java.io.File;
@@ -16,6 +16,8 @@ public class GameOfLife
     int genSize = 1;
     final String ALIVE = "⬛";
     final String DEAD = "⬜";
+    final String NUMBEREDALIVE = "■";
+    final String NUMBEREDDEAD = "□";
     final int RESETSPEED = 25;
     boolean[][][] cells = new boolean[boardSize][boardSize][2];
     String[] toggleString = new String[2];
@@ -45,7 +47,7 @@ public class GameOfLife
             fileLine = fileReader.nextLine().split(" ");
             if(isAnimated && !isEpilepsyMode) {
                 for(int i=0; i < boardSize; i++) cells[i][0][1] = true;
-                update();
+                update(false);
                 for(int i=0; i < boardSize-1; i++) {
                     try {
                         Thread.sleep(RESETSPEED);
@@ -53,7 +55,7 @@ public class GameOfLife
                         System.out.println("Looks like something went wrong");
                     }
                     for(int j=0; j < boardSize; j++) cells[j][i+1][1] = true;
-                    update();
+                    update(false);
                     try {
                         Thread.sleep(RESETSPEED);
                     } catch(Exception e) {
@@ -63,7 +65,7 @@ public class GameOfLife
                     for(int j=0; j < boardSize; j++) {
                         cells[j][i][1] = fileLine[j].equals("o");
                     }
-                    update();
+                    update(false);
                 }
                 try {
                     Thread.sleep(100);
@@ -94,10 +96,10 @@ public class GameOfLife
                     cells[j][i][1] = false;
                 }
             }
-            update();
+            update(false);
         } else {
             for(int i=0; i < boardSize; i++) cells[i][0][1] = true;
-            update();
+            update(false);
             for(int i=0; i < boardSize-1; i++) {
                 try {
                     Thread.sleep(RESETSPEED);
@@ -105,14 +107,14 @@ public class GameOfLife
                     System.out.println("Looks like something went wrong");
                 }
                 for(int j=0; j < boardSize; j++) cells[j][i+1][1] = true;
-                update();
+                update(false);
                 try {
                     Thread.sleep(RESETSPEED);
                 } catch(Exception e) {
                     System.out.println("Looks like something went wrong");
                 }
                 for(int j=0; j < boardSize; j++) cells[j][i][1] = false;
-                update();
+                update(false);
             }
             try {
                 Thread.sleep(100);
@@ -120,7 +122,7 @@ public class GameOfLife
                 System.out.println("Looks like something went wrong");
             }
             for(int i=0; i < boardSize; i++) cells[i][boardSize-1][1] = false;
-            update();
+            update(false);
         }
     }
 
@@ -161,7 +163,7 @@ public class GameOfLife
                 }
             }
         }
-        update();
+        update(false);
         System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)");
         isValid = false;
         while(!isValid) {
@@ -181,7 +183,7 @@ public class GameOfLife
 
     void title(boolean isStart) {
         readFile("TitleScreen.txt", !isStart);
-        update();
+        update(false);
         System.out.println("Press enter to start");
         kb.nextLine();
         if(isStart) {
@@ -195,7 +197,7 @@ public class GameOfLife
     }
 
     void help() {
-        update();
+        update(false);
         System.out.println("Though 'game' is in the title, this is not a game - more of an automaton.");
         System.out.println("Every cell is either alive ("+ALIVE+") or dead ("+DEAD+"). You can switch these states in the menu.\nOnce you start playing, the cells will follow some rules, one turn at a time:");
         System.out.println("Rule 1 - any live cell with fewer than two live neighbours dies, as if by underpopulation\nRule 2 - any live cell with two or three live neighbours lives on to the next generation\nRule 3 - any live cell with more than three live neighbours dies, as if by overpopulation\nRule 4 - any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction\n");
@@ -203,11 +205,11 @@ public class GameOfLife
 
     void wrap() {
         isWrap = !isWrap;
-        update();
+        update(false);
     }
 
     void toggle() { // toggles player-selected cells between alive and dead then updates the screen
-        update();
+        update(true);
         toggleString[0] = ".";
         while(!toggleString[0].equalsIgnoreCase("m") || toggleString.length!=1) {
             System.out.println("To toggle a cell, enter its x and y coordinates (separated by a comma). To go back to the menu, type m");
@@ -221,14 +223,14 @@ public class GameOfLife
                         invalidInput();
                     } else {
                         cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = !cells[Integer.parseInt(toggleString[0]) - 1][Integer.parseInt(toggleString[1]) - 1][1];
-                        update();
+                        update(true);
                     }
                 } catch(Exception e) {
                     invalidInput();
                 }
             }
         }
-        update();
+        update(false);
     }
 
     void speed() {
@@ -249,7 +251,7 @@ public class GameOfLife
             System.out.print("Choose a number that's at least 350. ");
         }
         speed = speedTemp;
-        update();
+        update(false);
     }
 
     void size() {
@@ -276,7 +278,7 @@ public class GameOfLife
             }
         }
         cells = temp;
-        update();
+        update(false);
     }
 
     void save() {
@@ -304,7 +306,7 @@ public class GameOfLife
                 invalidInput();
             }
         }
-        update();
+        update(false);
     }
 
     void load() {
@@ -318,10 +320,10 @@ public class GameOfLife
                 invalidInput();
             }
         }
-        update();
+        update(false);
     }
 
-    void update() { // clears the screen and prints the board
+    void update(boolean isNumbered) { // clears the screen and prints the board
         for(int h=0; h < genSize; h++) {
             for(int i=0; i < boardSize; i++) {
                 for(int j=0; j < boardSize; j++) {
@@ -330,15 +332,27 @@ public class GameOfLife
             }
         }
         System.out.print("\f");
-        /*for(int i=0; i < boardSize; i++) {
-            System.out.print(i+1+" ");
+        if(isNumbered) {
+            System.out.print("   ");
+            for(int i=0; i < boardSize; i++) {
+                System.out.print(i+1+" ");
+                if(i<9) System.out.print(" ");
+            }
+            System.out.println();
         }
-        System.out.println();
-        ^ Spacing needs work*/
         for(int i=0; i < boardSize; i++) { // prints the board
+            if(isNumbered) {
+                System.out.print(i+1+" ");
+                if(i<9) System.out.print(" ");
+            }
             for(int j=0; j < boardSize; j++) {
-                if(cells[j][i][genSize]) System.out.print(ALIVE+" ");
-                else System.out.print(DEAD+" ");
+                if(isNumbered) {
+                    if(cells[j][i][genSize]) System.out.print(NUMBEREDALIVE+"  ");
+                    else System.out.print(NUMBEREDDEAD+"  ");
+                } else {
+                    if(cells[j][i][genSize]) System.out.print(ALIVE+" ");
+                    else System.out.print(DEAD+" ");
+                }
             }
             System.out.println();
         }
@@ -346,13 +360,17 @@ public class GameOfLife
 
     void advance(int turns) {
         if(turns > -1) {
+            update(false);
             for(int k=0; k < turns; k++) {
+                System.out.print("Turn "+(k+1));
                 advanceOne(true, true);
             }
         } else {
             isSteady = false;
+            if(turns<-1000) turns = -1000;
             changeGenSize(-turns);
-            while(!isSteady) {
+            for(int k=0; !isSteady; k++) {
+                System.out.print("Turn "+(k+1));
                 advanceOne(true, false);
                 for(int h=0; h < genSize; h++) {
                     isSteady = true;
@@ -366,7 +384,7 @@ public class GameOfLife
                     }
                     if(isSteady) break;
                 }
-                update();
+                update(false);
             }
             changeGenSize(1);
         }
@@ -384,7 +402,7 @@ public class GameOfLife
         }
         cells = temp;
         genSize = newSize;
-        update();
+        update(false);
     }
 
     void advanceOne(boolean isWait, boolean isUpdate) {
@@ -404,7 +422,7 @@ public class GameOfLife
                 System.out.println("Looks like something went wrong");
             }
         }
-        if(isUpdate) update();
+        if(isUpdate) update(false);
     }
 
     int countAdjacent(int x, int y, int gen) { // counts how many cells are alive surrounding the cell given to it

@@ -3,15 +3,15 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 18/07/2023 - finished work on numbers along sides, need to make some design decisions and comments
+ * @version 20/07/2023 - added limits to several things
  */
-import java.util.Scanner;
+import java.util.Scanner; // giving me access to user input and files
 import java.io.File;
 import java.io.IOException;
 import java.io.FileWriter;
 public class GameOfLife
 {
-    Scanner kb = new Scanner(System.in);
+    Scanner kb = new Scanner(System.in); // initialising a bunch of variables and the keyboard scanner
     int boardSize = 40;
     int genSize = 1;
     final String ALIVE = "⬛";
@@ -29,11 +29,11 @@ public class GameOfLife
     boolean isValid;
     int speed = 500;
     public GameOfLife() {
-        title(true);
+        title(true); // starts up the game
     }
 
     public void main(String[] args) {
-        title(true);
+        title(true); // starts up the game
     }
 
     void readFile(String fileName, boolean isAnimated) {
@@ -164,7 +164,7 @@ public class GameOfLife
             }
         }
         update(false);
-        System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)");
+        System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)\nTurn limit: "+turnLimit());
         isValid = false;
         while(!isValid) {
             isValid = true;
@@ -236,13 +236,14 @@ public class GameOfLife
     void speed() {
         int speedTemp = 0;
         while(speedTemp<350) {
-            System.out.println("How often do you want the board to update (in milliseconds)?");
+            System.out.println("How often do you want the board to update (in milliseconds)? Upper limit: 5000");
             isValid = false;
             while(!isValid) {
                 isValid = true;
                 try {
                     speedTemp = Integer.parseInt(kb.nextLine());
                     if(speedTemp<0) invalidInput();
+                    if(speedTemp>5000) speedTemp=5000;
                 } catch(Exception e) {
                     invalidInput();
                 }
@@ -360,6 +361,7 @@ public class GameOfLife
 
     void advance(int turns) {
         if(turns > -1) {
+            if(turns>turnLimit()) turns = turnLimit();
             update(false);
             for(int k=0; k < turns; k++) {
                 System.out.print("Turn "+(k+1));
@@ -367,9 +369,9 @@ public class GameOfLife
             }
         } else {
             isSteady = false;
-            if(turns<-1000) turns = -1000;
+            if(turns<-turnLimit()) turns = -turnLimit();
             changeGenSize(-turns);
-            for(int k=0; !isSteady; k++) {
+            for(int k=0; !isSteady || k>turnLimit(); k++) {
                 System.out.print("Turn "+(k+1));
                 advanceOne(true, false);
                 for(int h=0; h < genSize; h++) {
@@ -459,4 +461,9 @@ public class GameOfLife
         }
         return surroundingNum;
     }
+    
+    int turnLimit() {
+        return 60120/(speed+1); // takes a minute at most at a time
+    }
 }
+

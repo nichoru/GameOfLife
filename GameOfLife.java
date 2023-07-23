@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 20/07/2023 - added limits to several things
+ * @version 24/07/2023 - worked on comments (currently up to save())
  */
 import java.util.Scanner; // giving me access to user input and files
 import java.io.File;
@@ -36,16 +36,17 @@ public class GameOfLife
         title(true); // starts up the game
     }
 
-    void readFile(String fileName, boolean isAnimated) {
+    void readFile(String fileName, boolean isAnimated) { // reads a given file and prints it on the board, either immediately or animated depending on what is given to it
         File myFile = new File(fileName);
         try {
             Scanner fileReader = new Scanner(myFile);
             boardSize = fileReader.nextInt();
             boolean[][][] tempBoard = new boolean[boardSize][boardSize][2];
             cells = tempBoard;
+            // ^reading the board size in the given file and making the board that size
             String[] fileLine = new String[boardSize];
             fileLine = fileReader.nextLine().split(" ");
-            if(isAnimated && !isEpilepsyMode) {
+            if(isAnimated && !isEpilepsyMode) { // animates the transition to the new board image
                 for(int i=0; i < boardSize; i++) cells[i][0][1] = true;
                 update(false);
                 for(int i=0; i < boardSize-1; i++) {
@@ -63,7 +64,7 @@ public class GameOfLife
                     }
                     fileLine = fileReader.nextLine().split(" ");
                     for(int j=0; j < boardSize; j++) {
-                        cells[j][i][1] = fileLine[j].equals("o");
+                        cells[j][i][1] = fileLine[j].equals("o"); // Note: files are written using "o"s to represent live cells
                     }
                     update(false);
                 }
@@ -76,7 +77,7 @@ public class GameOfLife
                 for(int i=0; i < boardSize; i++) {
                     cells[i][boardSize-1][1] = fileLine[i].equals("o");
                 }
-            } else {
+            } else { // just prints the new board if animation is unwanted/epilepsy mode is on
                 for(int i=0; i < boardSize; i++) {
                     fileLine = fileReader.nextLine().split(" ");
                     for(int j=0; j < boardSize; j++) {
@@ -90,7 +91,7 @@ public class GameOfLife
     }
 
     void reset() { // sets all cells to false (dead) then updates the screen
-        if(isEpilepsyMode) {
+        if(isEpilepsyMode) { // if in epilepsy mode, there's no animation for resetting the board
             for(int i=0; i < boardSize; i++) {
                 for(int j=0; j < boardSize; j++) {
                     cells[j][i][1] = false;
@@ -135,7 +136,7 @@ public class GameOfLife
             isCommand = false;
             while(!isCommand) {
                 isCommand = true;
-                switch (kb.nextLine().toLowerCase()) {
+                switch (kb.nextLine().toLowerCase()) { // executes the command represented by the letter the user chose
                     case "a": speed();
                         break;
                     case "b": size();
@@ -158,12 +159,12 @@ public class GameOfLife
                         break;
                     case "x": title(false);
                         break;
-                    default: isCommand = false;
+                    default: isCommand = false; // if the user inputs something unexpected, the game asks for them to input something else
                         invalidInput();
                 }
             }
         }
-        update(false);
+        update(false); // this block is executed when "s" is pressed - it asks for the number of turns to advance
         System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)\nTurn limit: "+turnLimit());
         isValid = false;
         while(!isValid) {
@@ -176,17 +177,17 @@ public class GameOfLife
         }
     }
 
-    void invalidInput() {
+    void invalidInput() { // called when an input doesn't make sense. Used in conjunction with a while loop, it asks for the user to try again
         System.out.println("Invalid input. Try again.");
         isValid = false;
     }
 
-    void title(boolean isStart) {
+    void title(boolean isStart) { // called when the game begins or when the user quits (differentiated by the variable isStart), makes the title screen then goes to menu
         readFile("TitleScreen.txt", !isStart);
         update(false);
         System.out.println("Press enter to start");
         kb.nextLine();
-        if(isStart) {
+        if(isStart) { // epilepsy warning - asks if epilepsy mode is wanted, which disables animations and sets a limit on how fast the board updates
             System.out.println("WARNING - this game contains flashing lights which could trigger seizures in people with photosensitive epilepsy. Would you like to disable these? (y/n)");
             String answer = kb.nextLine();
             if(answer.equalsIgnoreCase("n") || answer.equalsIgnoreCase("no")) isEpilepsyMode = false;
@@ -196,14 +197,14 @@ public class GameOfLife
         if(isStart) menu();
     }
 
-    void help() {
+    void help() { // displays instructions
         update(false);
         System.out.println("Though 'game' is in the title, this is not a game - more of an automaton.");
         System.out.println("Every cell is either alive ("+ALIVE+") or dead ("+DEAD+"). You can switch these states in the menu.\nOnce you start playing, the cells will follow some rules, one turn at a time:");
         System.out.println("Rule 1 - any live cell with fewer than two live neighbours dies, as if by underpopulation\nRule 2 - any live cell with two or three live neighbours lives on to the next generation\nRule 3 - any live cell with more than three live neighbours dies, as if by overpopulation\nRule 4 - any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction\n");
     }
 
-    void wrap() {
+    void wrap() { // toggles cells being able to wrap around the screen
         isWrap = !isWrap;
         update(false);
     }
@@ -233,7 +234,7 @@ public class GameOfLife
         update(false);
     }
 
-    void speed() {
+    void speed() { // lets the player change the speed the board updates
         int speedTemp = 0;
         while(speedTemp<350) {
             System.out.println("How often do you want the board to update (in milliseconds)? Upper limit: 5000");
@@ -243,19 +244,19 @@ public class GameOfLife
                 try {
                     speedTemp = Integer.parseInt(kb.nextLine());
                     if(speedTemp<0) invalidInput();
-                    if(speedTemp>5000) speedTemp=5000;
+                    if(speedTemp>5000) speedTemp=5000; // upper limit of once every 5 seconds, as this is VERY boring and slow
                 } catch(Exception e) {
                     invalidInput();
                 }
             }
-            if(speedTemp>=350 || !isEpilepsyMode) break;
+            if(speedTemp>=350 || !isEpilepsyMode) break; // epilepsy mode sets a lower limit on this at 350 milliseconds, so that it doesn't flash too fast (the screen has a tendency to flash if its told to do too much too fast)
             System.out.print("Choose a number that's at least 350. ");
         }
         speed = speedTemp;
         update(false);
     }
 
-    void size() {
+    void size() { // lets the player change the size of the board
         System.out.println("How wide/tall do you want the board to be?");
         boolean[][][] temp = new boolean[boardSize][boardSize][2];;
         isValid = false;
@@ -264,7 +265,7 @@ public class GameOfLife
             try {
                 boardSize = Integer.parseInt(kb.nextLine());
                 if(boardSize==0) invalidInput();
-                if(boardSize>39) {
+                if(boardSize>39) { // upper limit of 39 to keep the board and menu on screen at the same time
                     System.out.println("Board must be between 1 and 39 cells wide/tall");
                     isValid = false;
                 }
@@ -282,7 +283,7 @@ public class GameOfLife
         update(false);
     }
 
-    void save() {
+    void save() { // overwrites a save file with the current board
         System.out.println("Which save file do you want to save to (1,2 or 3 - this will overwrite previous saves)?");
         isValid = false;
         while(!isValid) {
@@ -293,7 +294,7 @@ public class GameOfLife
                 FileWriter saveWriter = new FileWriter("SavedGame"+tempFileNum+".txt");
                 saveWriter.write(boardSize+"\n");
                 for(int i=0; i<boardSize; i++) {
-                    for(int j=0; j<boardSize; j++) {
+                    for(int j=0; j<boardSize; j++) { // Note: "o"s represent live cells and "_"s represent dead cells in the save files
                         if(cells[j][i][0]) saveWriter.write("o ");
                         else saveWriter.write("_ ");
                     }
@@ -461,7 +462,7 @@ public class GameOfLife
         }
         return surroundingNum;
     }
-    
+
     int turnLimit() {
         return 60120/(speed+1); // takes a minute at most at a time
     }

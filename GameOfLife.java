@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 24/07/2023 - worked on comments (currently up to save())
+ * @version 25/07/2023 - worked on comments, deleted break()s, added a back function to the save and load functions (currently past save())
  */
 import java.util.Scanner; // giving me access to user input and files
 import java.io.File;
@@ -199,7 +199,7 @@ public class GameOfLife
 
     void help() { // displays instructions
         update(false);
-        System.out.println("Though 'game' is in the title, this is not a game - more of an automaton.");
+        System.out.println("Though 'game' is in the title, this is not a game - more of an automaton. My advice? Experiment! You can also load other people's previous games - there might be something cool there.");
         System.out.println("Every cell is either alive ("+ALIVE+") or dead ("+DEAD+"). You can switch these states in the menu.\nOnce you start playing, the cells will follow some rules, one turn at a time:");
         System.out.println("Rule 1 - any live cell with fewer than two live neighbours dies, as if by underpopulation\nRule 2 - any live cell with two or three live neighbours lives on to the next generation\nRule 3 - any live cell with more than three live neighbours dies, as if by overpopulation\nRule 4 - any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction\n");
     }
@@ -219,12 +219,13 @@ public class GameOfLife
                 isValid = true;
                 try {
                     toggleString = kb.nextLine().split(",");
-                    if(toggleString[0].equalsIgnoreCase("m") && toggleString.length==1) break;
-                    if(toggleString.length!=2) {
-                        invalidInput();
-                    } else {
-                        cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = !cells[Integer.parseInt(toggleString[0]) - 1][Integer.parseInt(toggleString[1]) - 1][1];
-                        update(true);
+                    if(!(toggleString[0].equalsIgnoreCase("m") && toggleString.length==1)) {
+                        if(toggleString.length!=2) {
+                            invalidInput();
+                        } else {
+                            cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = !cells[Integer.parseInt(toggleString[0]) - 1][Integer.parseInt(toggleString[1]) - 1][1];
+                            update(true);
+                        }
                     }
                 } catch(Exception e) {
                     invalidInput();
@@ -249,11 +250,12 @@ public class GameOfLife
                     invalidInput();
                 }
             }
-            if(speedTemp>=350 || !isEpilepsyMode) break; // epilepsy mode sets a lower limit on this at 350 milliseconds, so that it doesn't flash too fast (the screen has a tendency to flash if its told to do too much too fast)
-            System.out.print("Choose a number that's at least 350. ");
+            if(speedTemp>=350 || !isEpilepsyMode) { // epilepsy mode sets a lower limit on this at 350 milliseconds, so that it doesn't flash too fast (the screen has a tendency to flash if its told to do too much too fast)
+                speed = speedTemp;
+                speedTemp = 350; // stops the loop
+                update(false);
+            } else System.out.print("Choose a number that's at least 350. ");
         }
-        speed = speedTemp;
-        update(false);
     }
 
     void size() { // lets the player change the size of the board
@@ -284,24 +286,28 @@ public class GameOfLife
     }
 
     void save() { // overwrites a save file with the current board
-        System.out.println("Which save file do you want to save to (1,2 or 3 - this will overwrite previous saves)?");
+        System.out.println("Which save file do you want to save to (1,2 or 3 - this will overwrite previous saves)? To go back to the menu, type m");
         isValid = false;
         while(!isValid) {
             isValid = true;
             try {
-                int tempFileNum = Integer.parseInt(kb.nextLine());
-                if(tempFileNum!=1 && tempFileNum!=2 && tempFileNum!=3) invalidInput();
-                FileWriter saveWriter = new FileWriter("SavedGame"+tempFileNum+".txt");
-                saveWriter.write(boardSize+"\n");
-                for(int i=0; i<boardSize; i++) {
-                    for(int j=0; j<boardSize; j++) { // Note: "o"s represent live cells and "_"s represent dead cells in the save files
-                        if(cells[j][i][0]) saveWriter.write("o ");
-                        else saveWriter.write("_ ");
+                String tempFileString = kb.nextLine();
+                if(tempFileString.equalsIgnoreCase("m")) update(false); // lets the user go back instead of forcing them to overwrite previous progress if they accidentally press "c"
+                else {
+                    int tempFileNum = Integer.parseInt(tempFileString);
+                    if(tempFileNum!=1 && tempFileNum!=2 && tempFileNum!=3) invalidInput();
+                    FileWriter saveWriter = new FileWriter("SavedGame"+tempFileNum+".txt");
+                    saveWriter.write(boardSize+"\n");
+                    for(int i=0; i<boardSize; i++) {
+                        for(int j=0; j<boardSize; j++) { // Note: "o"s represent live cells and "_"s represent dead cells in the save files
+                            if(cells[j][i][0]) saveWriter.write("o ");
+                            else saveWriter.write("_ ");
+                        }
+                        saveWriter.write("\n");
                     }
-                    saveWriter.write("\n");
+                    saveWriter.flush();
+                    saveWriter.close();
                 }
-                saveWriter.flush();
-                saveWriter.close();
             } catch(IOException e) {
                 invalidInput();
             } catch(Exception e) {
@@ -311,13 +317,15 @@ public class GameOfLife
         update(false);
     }
 
-    void load() {
-        System.out.println("Which save file do you want to load (1,2 or 3)?");
+    void load() { // the user chooses a previous game that's been saved and loads it onto the board
+        System.out.println("Which save file do you want to load (1,2 or 3)? To go back to the menu, type m");
         isValid = false;
         while(!isValid) {
             isValid = true;
             try {
-                readFile("SavedGame"+Integer.parseInt(kb.nextLine())+".txt", true);
+                String tempLoadString = kb.nextLine();
+                if(tempLoadString.equalsIgnoreCase("m")) update(false); // lets the user go back instead of forcing them to overwrite their current progress if they accidentally press "l"
+                else readFile("SavedGame"+Integer.parseInt(tempLoadString)+".txt", true);
             } catch(Exception e) {
                 invalidInput();
             }
@@ -375,17 +383,13 @@ public class GameOfLife
             for(int k=0; !isSteady || k>turnLimit(); k++) {
                 System.out.print("Turn "+(k+1));
                 advanceOne(true, false);
-                for(int h=0; h < genSize; h++) {
+                for(int h=0; h < genSize && !isSteady; h++) {
                     isSteady = true;
                     for(int i=0; i < boardSize; i++) {
                         for(int j=0; j < boardSize; j++) {
-                            if (cells[j][i][h] != cells[j][i][genSize]) {
-                                isSteady = false;
-                                break;
-                            }
+                            if (cells[j][i][h] != cells[j][i][genSize]) isSteady = false;
                         }
                     }
-                    if(isSteady) break;
                 }
                 update(false);
             }

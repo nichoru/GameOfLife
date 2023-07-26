@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 25/07/2023 - worked on comments, deleted break()s, added a back function to the save and load functions (currently past save())
+ * @version 27/07/2023 - worked on comments, fixed automatic mode turn limit
  */
 import java.util.Scanner; // giving me access to user input and files
 import java.io.File;
@@ -165,7 +165,7 @@ public class GameOfLife
             }
         }
         update(false); // this block is executed when "s" is pressed - it asks for the number of turns to advance
-        System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)\nTurn limit: "+turnLimit());
+        System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less, or hits the turn limit.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)\nTurn limit: "+turnLimit());
         isValid = false;
         while(!isValid) {
             isValid = true;
@@ -199,7 +199,7 @@ public class GameOfLife
 
     void help() { // displays instructions
         update(false);
-        System.out.println("Though 'game' is in the title, this is not a game - more of an automaton. My advice? Experiment! You can also load other people's previous games - there might be something cool there.");
+        System.out.println("Though 'game' is in the title, this is not a game - more of an automaton. My advice? Experiment! You can also load other people's previous games (press l) - there might be something cool there.");
         System.out.println("Every cell is either alive ("+ALIVE+") or dead ("+DEAD+"). You can switch these states in the menu.\nOnce you start playing, the cells will follow some rules, one turn at a time:");
         System.out.println("Rule 1 - any live cell with fewer than two live neighbours dies, as if by underpopulation\nRule 2 - any live cell with two or three live neighbours lives on to the next generation\nRule 3 - any live cell with more than three live neighbours dies, as if by overpopulation\nRule 4 - any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction\n");
     }
@@ -334,7 +334,7 @@ public class GameOfLife
     }
 
     void update(boolean isNumbered) { // clears the screen and prints the board
-        for(int h=0; h < genSize; h++) {
+        for(int h=0; h < genSize; h++) { // moving it forward a generation
             for(int i=0; i < boardSize; i++) {
                 for(int j=0; j < boardSize; j++) {
                     cells[j][i][h]=cells[j][i][h+1];
@@ -342,7 +342,7 @@ public class GameOfLife
             }
         }
         System.out.print("\f");
-        if(isNumbered) {
+        if(isNumbered) { // prints the numbers at the top of the screen when in toggle mode
             System.out.print("   ");
             for(int i=0; i < boardSize; i++) {
                 System.out.print(i+1+" ");
@@ -351,7 +351,7 @@ public class GameOfLife
             System.out.println();
         }
         for(int i=0; i < boardSize; i++) { // prints the board
-            if(isNumbered) {
+            if(isNumbered) { // prints the numbers along the side of the screen when in toggle mode
                 System.out.print(i+1+" ");
                 if(i<9) System.out.print(" ");
             }
@@ -368,19 +368,19 @@ public class GameOfLife
         }
     }
 
-    void advance(int turns) {
-        if(turns > -1) {
+    void advance(int turns) { // advances the number of generations that the user inputs
+        if(turns > -1) { // normal mode
             if(turns>turnLimit()) turns = turnLimit();
             update(false);
             for(int k=0; k < turns; k++) {
                 System.out.print("Turn "+(k+1));
                 advanceOne(true, true);
             }
-        } else {
+        } else { // automatic mode
             isSteady = false;
             if(turns<-turnLimit()) turns = -turnLimit();
             changeGenSize(-turns);
-            for(int k=0; !isSteady || k>turnLimit(); k++) {
+            for(int k=0; !isSteady && k<turnLimit(); k++) {
                 System.out.print("Turn "+(k+1));
                 advanceOne(true, false);
                 for(int h=0; h < genSize && !isSteady; h++) {

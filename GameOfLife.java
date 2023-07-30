@@ -3,7 +3,7 @@
  * Write a description of class GameOfLife here.
  *
  * @author Rune Nicholson
- * @version 27/07/2023 - worked on comments, fixed automatic mode turn limit
+ * @version 31/07/2023 - worked on comments (for all methods, nested statements)
  */
 import java.util.Scanner; // giving me access to user input and files
 import java.io.File;
@@ -355,7 +355,7 @@ public class GameOfLife
                 System.out.print(i+1+" ");
                 if(i<9) System.out.print(" ");
             }
-            for(int j=0; j < boardSize; j++) {
+            for(int j=0; j < boardSize; j++) { // prints the cells one row at a time
                 if(isNumbered) {
                     if(cells[j][i][genSize]) System.out.print(NUMBEREDALIVE+"  ");
                     else System.out.print(NUMBEREDDEAD+"  ");
@@ -370,7 +370,7 @@ public class GameOfLife
 
     void advance(int turns) { // advances the number of generations that the user inputs
         if(turns > -1) { // normal mode
-            if(turns>turnLimit()) turns = turnLimit();
+            if(turns>turnLimit()) turns = turnLimit(); // stops after a minute
             update(false);
             for(int k=0; k < turns; k++) {
                 System.out.print("Turn "+(k+1));
@@ -378,12 +378,12 @@ public class GameOfLife
             }
         } else { // automatic mode
             isSteady = false;
-            if(turns<-turnLimit()) turns = -turnLimit();
-            changeGenSize(-turns);
+            if(turns<-turnLimit()) turns = -turnLimit(); // stops after a minute
+            changeGenSize(-turns); // makes the number of generations remembered equal the number the user wants
             for(int k=0; !isSteady && k<turnLimit(); k++) {
                 System.out.print("Turn "+(k+1));
                 advanceOne(true, false);
-                for(int h=0; h < genSize && !isSteady; h++) {
+                for(int h=0; h < genSize && !isSteady; h++) { // checking if any of the generations recorded have repeated
                     isSteady = true;
                     for(int i=0; i < boardSize; i++) {
                         for(int j=0; j < boardSize; j++) {
@@ -393,27 +393,27 @@ public class GameOfLife
                 }
                 update(false);
             }
-            changeGenSize(1);
+            changeGenSize(1); // sets it back to recording only the old generation and the next generation
         }
         menu();
     }
 
-    void changeGenSize(int newSize) {
-        boolean[][][] temp = new boolean[boardSize][boardSize][newSize+1];
-        for(int i=0; i<cells.length && i<boardSize; i++) {
+    void changeGenSize(int newSize) { // changes the number of generations saved
+        boolean[][][] tempCells = new boolean[boardSize][boardSize][newSize+1];
+        for(int i=0; i<cells.length && i<boardSize; i++) { // makes every generation in tempCells[][][] equal to the current generation of cells[][][]
             for(int j=0; j<cells.length && j<boardSize; j++) {
                 for(int k=0; k<newSize+1; k++) {
-                    temp[j][i][k] = cells[j][i][genSize];
+                    tempCells[j][i][k] = cells[j][i][genSize];
                 }
             }
         }
-        cells = temp;
+        cells = tempCells; // this lets me change the dimensions of the cells[][][] array. If I manipulated tempCells[][][] in another section of my code, cells[][][] would also be manipulated (I don't use tempCells[][][] anywhere else though so it's fine)
         genSize = newSize;
         update(false);
     }
 
-    void advanceOne(boolean isWait, boolean isUpdate) {
-        for(int i=0; i < boardSize; i++) {
+    void advanceOne(boolean isWait, boolean isUpdate) { // advances one generation (potentially waiting and updating the board based on the inputs)
+        for(int i=0; i < boardSize; i++) { // applies the rules to the current generation
             for(int j=0; j < boardSize; j++) {
                 if(cells[j][i][genSize-1]) {
                     if(!(countAdjacent(j,i,genSize-1)==2 || countAdjacent(j,i,genSize-1)==3)) cells[j][i][genSize] = false;
@@ -422,7 +422,7 @@ public class GameOfLife
                 }
             }
         }
-        if(isWait) {
+        if(isWait) { // waits after the turn if needed
             try {
                 Thread.sleep(speed);
             } catch(Exception e) {
@@ -434,7 +434,7 @@ public class GameOfLife
 
     int countAdjacent(int x, int y, int gen) { // counts how many cells are alive surrounding the cell given to it
         int surroundingNum = 0;
-        if(y>0) {
+        if(y>0) { // if there are cells above the cell being checked, count them
             if(x>0 && cells[x-1][y-1][gen]) surroundingNum++;
             if(x==0 && cells[boardSize-1][y-1][gen]) surroundingNum++;
             if(cells[x][y-1][gen]) surroundingNum++;

@@ -1,9 +1,9 @@
 
 /**
- * Write a description of class GameOfLife here.
+ * Lets the user play a recreation of Conway's Game of Life
  *
  * @author Rune Nicholson
- * @version 31/07/2023 - worked on comments (for all methods, nested statements)
+ * @version 1/08/2023 - finished work on comments, changed some names to make more sense
  */
 import java.util.Scanner; // giving me access to user input and files
 import java.io.File;
@@ -16,11 +16,11 @@ public class GameOfLife
     int genSize = 1;
     final String ALIVE = "⬛";
     final String DEAD = "⬜";
-    final String NUMBEREDALIVE = "■";
-    final String NUMBEREDDEAD = "□";
-    final int RESETSPEED = 25;
+    final String NUMBERED_ALIVE = "■";
+    final String NUMBERED_DEAD = "□";
+    final int RESET_SPEED = 25;
+    final int TIME_LIMIT = 60120;
     boolean[][][] cells = new boolean[boardSize][boardSize][2];
-    String[] toggleString = new String[2];
     boolean isStart = false;
     boolean isCommand;
     boolean isSteady;
@@ -28,12 +28,8 @@ public class GameOfLife
     boolean isEpilepsyMode = true;
     boolean isValid;
     int speed = 500;
-    public GameOfLife() {
-        title(true); // starts up the game
-    }
-
-    public void main(String[] args) {
-        title(true); // starts up the game
+    public GameOfLife() { // starts up the game
+        title(true);
     }
 
     void readFile(String fileName, boolean isAnimated) { // reads a given file and prints it on the board, either immediately or animated depending on what is given to it
@@ -51,14 +47,14 @@ public class GameOfLife
                 update(false);
                 for(int i=0; i < boardSize-1; i++) {
                     try {
-                        Thread.sleep(RESETSPEED);
+                        Thread.sleep(RESET_SPEED);
                     } catch(Exception e) {
                         System.out.println("Looks like something went wrong");
                     }
                     for(int j=0; j < boardSize; j++) cells[j][i+1][1] = true;
                     update(false);
                     try {
-                        Thread.sleep(RESETSPEED);
+                        Thread.sleep(RESET_SPEED);
                     } catch(Exception e) {
                         System.out.println("Looks like something went wrong");
                     }
@@ -103,14 +99,14 @@ public class GameOfLife
             update(false);
             for(int i=0; i < boardSize-1; i++) {
                 try {
-                    Thread.sleep(RESETSPEED);
+                    Thread.sleep(RESET_SPEED);
                 } catch(Exception e) {
                     System.out.println("Looks like something went wrong");
                 }
                 for(int j=0; j < boardSize; j++) cells[j][i+1][1] = true;
                 update(false);
                 try {
-                    Thread.sleep(RESETSPEED);
+                    Thread.sleep(RESET_SPEED);
                 } catch(Exception e) {
                     System.out.println("Looks like something went wrong");
                 }
@@ -129,7 +125,7 @@ public class GameOfLife
 
     void menu() { // tells you the commands and lets you input them
         isStart = false;
-        while(!isStart) {
+        while(!isStart) { // loops until "s" is inputted
             System.out.println("Press t to toggle (change) cell lives, s to start, q to quick advance one turn, r to reset board, x to quit, i to see instructions on how to play\nPress l to load a save file, c to save the current state\nPress a to change advancement speed (currently "+speed+" milliseconds per turn), b to change board size (currently "+boardSize+" by "+boardSize+")");
             if(isWrap) System.out.println("Press d to make cells that go off screen not come out the other side");
             else System.out.println("Press d to make cells that go off screen come out the other side");
@@ -165,7 +161,7 @@ public class GameOfLife
             }
         }
         update(false); // this block is executed when "s" is pressed - it asks for the number of turns to advance
-        System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less, or hits the turn limit.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)\nTurn limit: "+turnLimit());
+        System.out.println("How many turns do you want to advance?\nType a negative number to turn on automatic mode. It will stop advancing once it goes between that number of states or less, or hits the turn limit.\n(eg. -1 means it will stop once its stable, -2 means it will stop once it goes between 2 (or less) states etc.)\nTurn limit: "+TIME_LIMIT/(speed+1));
         isValid = false;
         while(!isValid) {
             isValid = true;
@@ -211,19 +207,19 @@ public class GameOfLife
 
     void toggle() { // toggles player-selected cells between alive and dead then updates the screen
         update(true);
-        toggleString[0] = ".";
-        while(!toggleString[0].equalsIgnoreCase("m") || toggleString.length!=1) {
+        String[] toggleArray = {".","."};
+        while(!toggleArray[0].equalsIgnoreCase("m") || toggleArray.length!=1) { // asks player to input coordinates of cells to be changed until "m" is typed
             System.out.println("To toggle a cell, enter its x and y coordinates (separated by a comma). To go back to the menu, type m");
             isValid = false;
-            while(!isValid) {
+            while(!isValid) { // making sure it doesn't break if the input is invalid
                 isValid = true;
                 try {
-                    toggleString = kb.nextLine().split(",");
-                    if(!(toggleString[0].equalsIgnoreCase("m") && toggleString.length==1)) {
-                        if(toggleString.length!=2) {
+                    toggleArray = kb.nextLine().split(",");
+                    if(!(toggleArray[0].equalsIgnoreCase("m") && toggleArray.length==1)) {
+                        if(toggleArray.length!=2) {
                             invalidInput();
                         } else {
-                            cells[Integer.parseInt(toggleString[0])-1][Integer.parseInt(toggleString[1])-1][1] = !cells[Integer.parseInt(toggleString[0]) - 1][Integer.parseInt(toggleString[1]) - 1][1];
+                            cells[Integer.parseInt(toggleArray[0])-1][Integer.parseInt(toggleArray[1])-1][1] = !cells[Integer.parseInt(toggleArray[0]) - 1][Integer.parseInt(toggleArray[1]) - 1][1];
                             update(true);
                         }
                     }
@@ -262,7 +258,7 @@ public class GameOfLife
         System.out.println("How wide/tall do you want the board to be?");
         boolean[][][] temp = new boolean[boardSize][boardSize][2];;
         isValid = false;
-        while(!isValid) {
+        while(!isValid) { // making sure the input is valid and within the set range
             isValid = true;
             try {
                 boardSize = Integer.parseInt(kb.nextLine());
@@ -276,12 +272,12 @@ public class GameOfLife
                 invalidInput();
             }
         }
-        for(int i=0; i<cells.length && i<boardSize; i++) {
+        for(int i=0; i<cells.length && i<boardSize; i++) { // transferring all (possible) cell data over to the temporary board
             for(int j=0; j<cells.length && j<boardSize; j++) {
-                temp[j][i][1] = cells[j][i][1];
+                temp[j][i][genSize] = cells[j][i][genSize];
             }
         }
-        cells = temp;
+        cells = temp; // sets cells to temp, which makes them the same array, but temp is not used elsewhere so it doesn't generate any problems. I did this to change the size of the array
         update(false);
     }
 
@@ -357,8 +353,8 @@ public class GameOfLife
             }
             for(int j=0; j < boardSize; j++) { // prints the cells one row at a time
                 if(isNumbered) {
-                    if(cells[j][i][genSize]) System.out.print(NUMBEREDALIVE+"  ");
-                    else System.out.print(NUMBEREDDEAD+"  ");
+                    if(cells[j][i][genSize]) System.out.print(NUMBERED_ALIVE+"  ");
+                    else System.out.print(NUMBERED_DEAD+"  ");
                 } else {
                     if(cells[j][i][genSize]) System.out.print(ALIVE+" ");
                     else System.out.print(DEAD+" ");
@@ -370,7 +366,7 @@ public class GameOfLife
 
     void advance(int turns) { // advances the number of generations that the user inputs
         if(turns > -1) { // normal mode
-            if(turns>turnLimit()) turns = turnLimit(); // stops after a minute
+            if(turns>TIME_LIMIT/(speed+1)) turns = TIME_LIMIT/(speed+1); // stops after a minute
             update(false);
             for(int k=0; k < turns; k++) {
                 System.out.print("Turn "+(k+1));
@@ -378,9 +374,9 @@ public class GameOfLife
             }
         } else { // automatic mode
             isSteady = false;
-            if(turns<-turnLimit()) turns = -turnLimit(); // stops after a minute
+            if(turns<-TIME_LIMIT/(speed+1)) turns = -TIME_LIMIT/(speed+1); // stops after a minute
             changeGenSize(-turns); // makes the number of generations remembered equal the number the user wants
-            for(int k=0; !isSteady && k<turnLimit(); k++) {
+            for(int k=0; !isSteady && k<TIME_LIMIT/(speed+1); k++) {
                 System.out.print("Turn "+(k+1));
                 advanceOne(true, false);
                 for(int h=0; h < genSize && !isSteady; h++) { // checking if any of the generations recorded have repeated
@@ -440,7 +436,7 @@ public class GameOfLife
             if(cells[x][y-1][gen]) surroundingNum++;
             if(x<boardSize-1 && cells[x+1][y-1][gen]) surroundingNum++;
             if(x==boardSize-1 && cells[0][y-1][gen]) surroundingNum++;
-        } else if(isWrap) {
+        } else if(isWrap) { // if the cell being checked is at the top and the cells are allowed to wrap around, count the corresponding cells at the bottom
             if(x>0 && cells[x-1][boardSize-1][gen]) surroundingNum++;
             if(x==0 && cells[boardSize-1][boardSize-1][gen]) surroundingNum++;
             if(cells[x][boardSize-1][gen]) surroundingNum++;
@@ -451,13 +447,13 @@ public class GameOfLife
         if(x==0 && isWrap && cells[boardSize-1][y][gen]) surroundingNum++;
         if(x<boardSize-1 && cells[x+1][y][gen]) surroundingNum++;
         if(x==boardSize-1 && isWrap && cells[0][y][gen]) surroundingNum++;
-        if(y<boardSize-1) {
+        if(y<boardSize-1) { // if there are cells below the cell being checked, count them
             if(x>0 && cells[x-1][y+1][gen]) surroundingNum++;
             if(x==0 && cells[boardSize-1][y+1][gen]) surroundingNum++;
             if(cells[x][y+1][gen]) surroundingNum++;
             if(x<boardSize-1 && cells[x+1][y+1][gen]) surroundingNum++;
             if(x==boardSize-1 && cells[0][y+1][gen]) surroundingNum++;
-        } else if(isWrap) {
+        } else if(isWrap) { // if the cell being checked is at the bottom and the cells are allowed to wrap around, count the corresponding cells at the top
             if(x>0 && cells[x-1][0][gen]) surroundingNum++;
             if(x==0 && cells[boardSize-1][0][gen]) surroundingNum++;
             if(cells[x][0][gen]) surroundingNum++;
@@ -465,10 +461,6 @@ public class GameOfLife
             if(x==boardSize-1 && cells[0][0][gen]) surroundingNum++;
         }
         return surroundingNum;
-    }
-
-    int turnLimit() {
-        return 60120/(speed+1); // takes a minute at most at a time
     }
 }
 

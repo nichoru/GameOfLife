@@ -3,7 +3,7 @@
  * Lets the user play a recreation of Conway's Game of Life
  *
  * @author Rune Nicholson
- * @version 1/08/2023 - finished work on comments, changed some names to make more sense
+ * @version 3/08/2023 - made some minor adjustments to make things work better
  */
 import java.util.Scanner; // giving me access to user input and files
 import java.io.File;
@@ -37,9 +37,7 @@ public class GameOfLife
         try {
             Scanner fileReader = new Scanner(myFile);
             boardSize = fileReader.nextInt();
-            boolean[][][] tempBoard = new boolean[boardSize][boardSize][2];
-            cells = tempBoard;
-            // ^reading the board size in the given file and making the board that size
+            cells = new boolean[boardSize][boardSize][2]; // reading the board size in the given file and making the board that size
             String[] fileLine = new String[boardSize];
             fileLine = fileReader.nextLine().split(" ");
             if(isAnimated && !isEpilepsyMode) { // animates the transition to the new board image
@@ -246,7 +244,7 @@ public class GameOfLife
                     invalidInput();
                 }
             }
-            if(speedTemp>=350 || !isEpilepsyMode) { // epilepsy mode sets a lower limit on this at 350 milliseconds, so that it doesn't flash too fast (the screen has a tendency to flash if its told to do too much too fast)
+            if(speedTemp>=350 || !isEpilepsyMode) { // epilepsy mode sets a lower limit on this at 350 milliseconds, so that it doesn't flash too fast (the screen has a tendency to flash if it's told to do too much too fast)
                 speed = speedTemp;
                 speedTemp = 350; // stops the loop
                 update(false);
@@ -256,7 +254,7 @@ public class GameOfLife
 
     void size() { // lets the player change the size of the board
         System.out.println("How wide/tall do you want the board to be?");
-        boolean[][][] temp = new boolean[boardSize][boardSize][2];;
+        boolean[][][] temp = new boolean[boardSize][boardSize][2];
         isValid = false;
         while(!isValid) { // making sure the input is valid and within the set range
             isValid = true;
@@ -277,7 +275,7 @@ public class GameOfLife
                 temp[j][i][genSize] = cells[j][i][genSize];
             }
         }
-        cells = temp; // sets cells to temp, which makes them the same array, but temp is not used elsewhere so it doesn't generate any problems. I did this to change the size of the array
+        cells = temp; // sets cells to temp, which makes them the same array, but temp is not used elsewhere, so it doesn't generate any problems. I did this to change the size of the array
         update(false);
     }
 
@@ -304,8 +302,6 @@ public class GameOfLife
                     saveWriter.flush();
                     saveWriter.close();
                 }
-            } catch(IOException e) {
-                invalidInput();
             } catch(Exception e) {
                 invalidInput();
             }
@@ -381,8 +377,8 @@ public class GameOfLife
                 advanceOne(true, false);
                 for(int h=0; h < genSize && !isSteady; h++) { // checking if any of the generations recorded have repeated
                     isSteady = true;
-                    for(int i=0; i < boardSize; i++) {
-                        for(int j=0; j < boardSize; j++) {
+                    for(int i=0; i < boardSize && isSteady; i++) {
+                        for(int j=0; j < boardSize && isSteady; j++) {
                             if (cells[j][i][h] != cells[j][i][genSize]) isSteady = false;
                         }
                     }
@@ -403,7 +399,7 @@ public class GameOfLife
                 }
             }
         }
-        cells = tempCells; // this lets me change the dimensions of the cells[][][] array. If I manipulated tempCells[][][] in another section of my code, cells[][][] would also be manipulated (I don't use tempCells[][][] anywhere else though so it's fine)
+        cells = tempCells; // this lets me change the dimensions of the cells[][][] array. If I manipulated tempCells[][][] in another section of my code, cells[][][] would also be manipulated (I don't use tempCells[][][] anywhere else though, so it's fine)
         genSize = newSize;
         update(false);
     }

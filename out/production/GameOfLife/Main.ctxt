@@ -1,0 +1,6 @@
+#BlueJ class context
+comment0.target=Main
+comment0.text=\r\n\ Runs\ the\ GameOfLife\ class\r\n\r\n\ @author\ Rune\ Nicholson\r\n\ @version\ 1/08/2023\ -\ created\ this\ class\r\n
+comment1.params=args
+comment1.target=void\ main(java.lang.String[])
+numComments=2
